@@ -1,0 +1,135 @@
+import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
+import {CreateCompanyDto} from './dto/create-company.dto';
+import {UpdateCompanyDto} from './dto/update-company.dto';
+import {Company} from "./entities/company.entity";
+import {DataSource, Repository} from "typeorm";
+import {InjectRepository} from "@nestjs/typeorm";
+
+@Injectable()
+export class CompanyService {
+
+    constructor(
+        @InjectRepository(Company)
+        private readonly companyRepository: Repository<Company>,
+        private readonly dataSource: DataSource,
+    ) {
+    }
+
+    async create(createCompanyDto: CreateCompanyDto) {
+        const qr = this.dataSource.createQueryRunner();
+        await qr.connect();
+        await qr.startTransaction();
+
+        try {
+            const company = await qr.manager.createQueryBuilder()
+                .insert()
+                .into(Company)
+                .values({
+                    name: createCompanyDto.name,
+                    code: createCompanyDto.code,
+                    address: createCompanyDto.address,
+                })
+                .execute();
+
+            const companyId = company.identifiers[0].id;
+
+            await qr.commitTransaction();
+
+            return await this.companyRepository.findOne({
+                where: {id: companyId},
+            });
+        } catch (e) {
+            await qr.rollbackTransaction();
+            throw e;
+        } finally {
+            await qr.release();
+        }
+    }
+
+    async findAll(name?: string) {
+        const qb = this.companyRepository.createQueryBuilder('company');
+
+        if (name) {
+            qb.where('company.name LIKE :title', {title: `%${name}%`});
+        }
+        return await qb.getMany();
+    }
+
+    async findOne(id: number) {
+        const company = await this.companyRepository.createQueryBuilder('company')
+            .where('company.id = :id', {id})
+            .getOne();
+
+        if (!company) {
+            throw new NotFoundException('Company not found');
+        }
+        return company;
+    }
+
+    async update(id: number, updateCompanyDto: UpdateCompanyDto) {
+        const qr = this.dataSource.createQueryRunner();
+        await qr.connect();
+        await qr.startTransaction();
+
+        try {
+            const company = await qr.manager.findOne(Company, {where: {id}});
+            if (!company) {
+                throw new NotFoundException('Company not found');
+            }
+
+            // 이름 중복 검사
+            if (updateCompanyDto.name) {
+                const existingByName = await qr.manager.findOne(
+                    Company,
+                    {where: {name: updateCompanyDto.name},}
+                );
+
+                if (existingByName && existingByName.id !== id) {
+                    throw new ConflictException('Company name already exists');
+                }
+            }
+
+            // 코드 중복 검사
+            if (updateCompanyDto.code) {
+                const existingByCode = await qr.manager.findOne(
+                    Company,
+                    {where: {code: updateCompanyDto.code},}
+                );
+
+                if (existingByCode && existingByCode.id !== id) {
+                    throw new ConflictException('Company code already exists');
+                }
+            }
+
+            await qr.manager.update(Company, id, updateCompanyDto);
+            await qr.commitTransaction();
+
+            // 업데이트 후 엔티티 반환
+            return await qr.manager.findOneBy(Company, {id});
+
+        } catch (e) {
+            await qr.rollbackTransaction();
+            throw e;
+        } finally {
+            await qr.release();
+        }
+    }
+
+    async remove(id: number) {
+        const company = this.companyRepository.findOne({
+            where: {
+                id,
+            },
+        });
+        if (!company) {
+            throw new NotFoundException('Company not found');
+        }
+
+        await this.companyRepository.createQueryBuilder()
+            .delete()
+            .where('id = :id', {id})
+            .execute();
+
+        return id;
+    }
+}
