@@ -1,11 +1,12 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
-import {User} from "../users/entities/user.entity";
+import {BadRequestException, Injectable, UnauthorizedException} from '@nestjs/common';
+import {User, UserRole} from "../users/entities/user.entity";
 import {Repository} from "typeorm";
 import {InjectRepository} from "@nestjs/typeorm";
 import * as bcrypt from "bcrypt";
 import {ConfigService} from '@nestjs/config';
 import {JwtService} from "@nestjs/jwt";
 import {CreateUserDto} from "../users/dto/create-user.dto";
+import {envVariables} from "../common/const/env.const";
 
 @Injectable()
 export class AuthService {
@@ -45,6 +46,42 @@ export class AuthService {
         };
     }
 
+    parseBearerToken(rawToken: string, isRefreshToken: boolean) {
+        const bearerSplit = rawToken.split(' ');
+
+        if (bearerSplit.length !== 2) {
+            throw new BadRequestException('토큰 포멧이 잘못되었습니다.');
+        }
+
+        const [bearer, token] = bearerSplit;
+
+        if (bearer.toLowerCase() !== 'bearer') {
+            throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+        }
+
+        try {
+            const payload = this.jwtService.verify(token, {
+                secret: this.configService.get<string>(envVariables.refreshTokenSecret),
+            });
+            if(isRefreshToken){
+                if(payload.type !== 'refresh'){
+                    throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+                }
+            }
+            else{
+                if(payload.type !== 'access'){
+                    throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+                }
+            }
+            return payload;
+
+        } catch (e) {
+            throw new UnauthorizedException('토큰 만료 되었습니다.');
+        }
+
+
+    }
+
     async register(rawToken: string, createUserDto: CreateUserDto) {
         const {phone, password} = this.parseBasicToken(rawToken);
 
@@ -54,7 +91,7 @@ export class AuthService {
             throw new BadRequestException('이미 가입한 사용자 입니다.');
         }
 
-        const hash = await bcrypt.hash(password, this.configService.get<number>('HASH_ROUNDS') ?? 10);
+        const hash = await bcrypt.hash(password, this.configService.get<number>(envVariables.hashRounds) ?? 10);
 
         const newUser = this.userRepository.create({
             phone,
@@ -73,42 +110,42 @@ export class AuthService {
 
     }
 
-    async login(rawToken: string) {
-        const {phone, password} = this.parseBasicToken(rawToken);
-
+    async authenticate(phone: string, password: string) {
         const user = await this.userRepository.findOne({where: {phone}});
 
         if (!user) {
             throw new BadRequestException('잘못된 로그인 정보입니다.');
         }
-
         const passOk = await bcrypt.compare(password, user.password);
 
         if (!passOk) {
             throw new BadRequestException('잘못된 로그인 정보입니다.');
         }
+        return user;
+    }
 
-        const refreshTokenSecret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
-        const accessTokenSecret = this.configService.get<string>('ACCESS_TOKEN_SECRET');
+    issueToken(user: { phone: string, role: UserRole }, isRefreshToken: boolean) {
+        const refreshTokenSecret = this.configService.get<string>(envVariables.refreshTokenSecret);
+        const accessTokenSecret = this.configService.get<string>(envVariables.accessTokenSecret);
 
+        return this.jwtService.sign({
+            sub: user.phone,
+            role: user.role,
+            type: isRefreshToken ? 'refresh' : 'access'
+        }, {
+            secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
+            expiresIn: isRefreshToken ? '24h' : '1h',
+        })
+    }
+
+    async login(rawToken: string) {
+        const {phone, password} = this.parseBasicToken(rawToken);
+
+        const user = await this.authenticate(phone, password);
 
         return {
-            refreshToken: await this.jwtService.signAsync({
-                sub: user.phone,
-                role: user.role,
-                type: 'refresh'
-            }, {
-                secret: refreshTokenSecret,
-                expiresIn: '24h'
-            }),
-            accessToken: await this.jwtService.signAsync({
-                sub: user.phone,
-                role: user.role,
-                type: 'access'
-            }, {
-                secret: accessTokenSecret,
-                expiresIn: '1h'
-            })
+            refreshToken: this.issueToken(user, true),
+            accessToken: this.issueToken(user, false),
         };
     }
 }

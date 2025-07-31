@@ -1,7 +1,7 @@
 import {IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsString} from "class-validator";
 import {UserRole} from "../entities/user.entity";
 
-export class CreateUserDto {
+export class CreateUserByAdminDto {
     @IsString()
     phone: string;
 

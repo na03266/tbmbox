@@ -5,8 +5,9 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {UsersModule} from './users/users.module';
 import {CompanyModule} from './company/company.module';
 import {WorkshopModule} from './workshop/workshop.module';
-import { TaskModule } from './task/task.module';
-import { AuthModule } from './auth/auth.module';
+import {TaskModule} from './task/task.module';
+import {AuthModule} from './auth/auth.module';
+import {envVariables} from './common/const/env.const';
 
 @Module({
     imports: [
@@ -28,14 +29,13 @@ import { AuthModule } from './auth/auth.module';
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({
-                type: configService.get<string>('DB_TYPE') as 'postgres',
-                host: configService.get<string>('DB_HOST'),
-                port: configService.get<number>('DB_PORT'),
-                username: configService.get<string>('DB_USERNAME'),
-                password: configService.get<string>('DB_PASSWORD'),
-                database: configService.get<string>('DB_DATABASE'),
+                type: configService.get<string>(envVariables.dbType) as 'postgres',
+                host: configService.get<string>(envVariables.dbHost),
+                port: configService.get<number>(envVariables.dbPort),
+                username: configService.get<string>(envVariables.dbUsername),
+                password: configService.get<string>(envVariables.dbPassword),
+                database: configService.get<string>(envVariables.dbDatabase),
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
-
                 synchronize: true,
             }),
             inject: [ConfigService],
