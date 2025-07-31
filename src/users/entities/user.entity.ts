@@ -1,7 +1,8 @@
-import {Column, Entity, JoinColumn, ManyToOne, PrimaryColumn} from "typeorm";
+import {Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
 import {Company} from "../../company/entities/company.entity";
 import {Workshop} from "../../workshop/entities/workshop.entity";
 import {Exclude} from "class-transformer";
+import {BaseTable} from "../../common/entity/base-table.entity";
 
 export enum UserRole {
     MASTER = 'master',
@@ -11,8 +12,13 @@ export enum UserRole {
 }
 
 @Entity()
-export class User {
-    @PrimaryColumn()
+export class User extends BaseTable {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({
+        unique: true,
+    })
     phone: string
 
     @Column()
@@ -25,7 +31,7 @@ export class User {
     password: string
 
     @Column({default: false})
-    isActive: boolean
+    isActivated: boolean
 
     @Column({nullable: true})
     icCardNumber: string

@@ -71,17 +71,17 @@ export class UsersService {
 
     async findByCompany(companyId: number) {
 
-        const users = await this.workshopRepository
-            .createQueryBuilder('user')
-            .leftJoin('user.workshop', 'workshop')
-            .where('company.id = :id', {id: companyId})
+        const workshops = await this.workshopRepository
+            .createQueryBuilder('workshops')
+            .where('workshops.companyId = :id', {id: companyId})
+            .andWhere('workshops.deletedAt IS NULL')
             .getMany();
 
-        if (!users.length) {
+        if (!workshops.length) {
             throw new NotFoundException('No users found for the company');
         }
 
-        return users;
+        return workshops;
     }
 
     async findOne(phone: string) {
@@ -160,7 +160,7 @@ export class UsersService {
         }
 
         await this.userRepository.createQueryBuilder()
-            .delete()
+            .softDelete()
             .from(User)
             .where('phone = :phone', {phone: phone})
             .execute();

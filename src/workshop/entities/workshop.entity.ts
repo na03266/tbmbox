@@ -1,9 +1,10 @@
 import {Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import {Company} from "../../company/entities/company.entity";
 import {User} from "../../users/entities/user.entity";
+import {BaseTable} from "../../common/entity/base-table.entity";
 
 @Entity()
-export class Workshop {
+export class Workshop extends BaseTable {
     @PrimaryGeneratedColumn()
     id: number
 
@@ -12,6 +13,9 @@ export class Workshop {
 
     @Column()
     address: string
+
+    @Column({nullable: true})
+    addressDetail: string
 
     @Column({
         default: false

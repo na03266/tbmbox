@@ -1,8 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ClassSerializerInterceptor,
+  UseInterceptors
+} from '@nestjs/common';
 import { WorkshopService } from './workshop.service';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('workshop')
 export class WorkshopController {
   constructor(private readonly workshopService: WorkshopService) {}

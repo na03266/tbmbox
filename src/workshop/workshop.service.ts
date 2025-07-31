@@ -4,7 +4,6 @@ import {UpdateWorkshopDto} from './dto/update-workshop.dto';
 import {InjectRepository} from "@nestjs/typeorm";
 import {Workshop} from "./entities/workshop.entity";
 import {DataSource, Repository} from "typeorm";
-import {options} from "joi";
 import {Company} from "../company/entities/company.entity";
 
 @Injectable()
@@ -117,7 +116,7 @@ export class WorkshopService {
             throw new NotFoundException('workshop not found');
         }
 
-        await this.workshopRepository.remove(workshop);
+        await this.workshopRepository.softRemove(workshop);
 
         return id;
     }

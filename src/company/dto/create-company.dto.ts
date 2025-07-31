@@ -12,5 +12,9 @@ export class CreateCompanyDto {
     @IsNotEmpty()
     @IsString()
     address: string;
+
+    @IsNotEmpty()
+    @IsString()
+    addressDetail: string;
 }
 

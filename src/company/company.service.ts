@@ -28,6 +28,7 @@ export class CompanyService {
                     name: createCompanyDto.name,
                     code: createCompanyDto.code,
                     address: createCompanyDto.address,
+                    addressDetail: createCompanyDto.addressDetail
                 })
                 .execute();
 
@@ -58,6 +59,7 @@ export class CompanyService {
     async findOne(id: number) {
         const company = await this.companyRepository.createQueryBuilder('company')
             .where('company.id = :id', {id})
+            .andWhere('company.deletedAt IS NULL')
             .getOne();
 
         if (!company) {
@@ -126,7 +128,7 @@ export class CompanyService {
         }
 
         await this.companyRepository.createQueryBuilder()
-            .delete()
+            .softDelete()
             .where('id = :id', {id})
             .execute();
 
