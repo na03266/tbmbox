@@ -17,9 +17,9 @@ export class WorkshopController {
     return this.workshopService.findByCompany(+id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.workshopService.findOne(+id);
+  @Get()
+  findAll() {
+    return this.workshopService.findAll();
   }
 
   @Patch(':id')

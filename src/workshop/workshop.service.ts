@@ -70,7 +70,7 @@ export class WorkshopService {
     async findByCompany(companyId: number) {
         const workshops = await this.workshopRepository
             .createQueryBuilder('workshop')
-            .where('company.id = :id', {id: companyId})
+            .where('workshop.companyId = :id', {id: companyId})
             .getMany();
 
         if (!workshops.length) {
@@ -80,11 +80,10 @@ export class WorkshopService {
         return workshops;
     }
 
-    async findOne(id: number) {
+    async findAll() {
         const workshop = await this.workshopRepository
             .createQueryBuilder('workshop')
-            .where('workshop.id = :id', {id: id})
-            .getOne();
+            .getMany();
 
         if (!workshop) {
             throw new NotFoundException('workshop not found');
@@ -93,16 +92,35 @@ export class WorkshopService {
         return workshop;
     }
 
-    update(
+    async update(
         id: number,
         updateWorkshopDto: UpdateWorkshopDto,
     ) {
-        return `This action updates a #${id} workshop`;
+        const workshop = await this.workshopRepository.findOne({
+            where: {id},
+        });
+
+        if (!workshop) {
+            throw new NotFoundException('workshop not found');
+        }
+
+        const updatedWorkshop = this.workshopRepository.merge(workshop, updateWorkshopDto);
+        return this.workshopRepository.save(updatedWorkshop);
     }
 
-    remove(id: number) {
+    async remove(id: number) {
+        const workshop = await this.workshopRepository.findOne({
+            where: {id},
+        });
 
+        if (!workshop) {
+            throw new NotFoundException('workshop not found');
+        }
 
-        return `This action removes a #${id} workshop`;
+        await this.workshopRepository.remove(workshop);
+
+        return id;
     }
+
+
 }

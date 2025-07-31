@@ -1,4 +1,4 @@
-import {Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import {Company} from "../../company/entities/company.entity";
 import {User} from "../../users/entities/user.entity";
 
@@ -18,6 +18,9 @@ export class Workshop {
     })
     isCabinet: boolean
 
+    @Column()
+    companyId: number
+
     @ManyToOne(
         () => Company,
         (company) => company.workshops,
@@ -26,6 +29,7 @@ export class Workshop {
             nullable: true,
         }
     )
+    @JoinColumn({name: 'companyId'})
     company: Company
 
     @OneToMany(

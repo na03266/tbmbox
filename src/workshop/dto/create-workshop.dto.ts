@@ -11,7 +11,7 @@ export class CreateWorkshopDto {
 
     @IsNotEmpty()
     @IsBoolean()
-    isCabinet: boolean;
+    isCabinet: boolean = false;
 
     @IsNotEmpty()
     @IsNumber()

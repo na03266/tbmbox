@@ -5,6 +5,7 @@ import {Exclude} from "class-transformer";
 
 export enum UserRole {
     MASTER = 'master',
+    SUPERADMIN = 'superadmin',
     ADMIN = 'admin',
     USER = 'user',
 }
