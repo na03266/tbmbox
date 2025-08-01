@@ -1,4 +1,4 @@
-import {Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
+import {Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
 import {Company} from "../../company/entities/company.entity";
 import {Workshop} from "../../workshop/entities/workshop.entity";
 import {Exclude} from "class-transformer";
@@ -6,7 +6,7 @@ import {BaseTable} from "../../common/entity/base-table.entity";
 
 export enum UserRole {
     MASTER = 'master',
-    SUPERADMIN = 'superadmin',
+    SUPERADMIN = 'superAdmin',
     ADMIN = 'admin',
     USER = 'user',
 }

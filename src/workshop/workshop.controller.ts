@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   ClassSerializerInterceptor,
-  UseInterceptors
+  UseInterceptors,
+	Request
 } from '@nestjs/common';
 import { WorkshopService } from './workshop.service';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto';
+import { UserRole } from '../users/entities/user.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('workshop')
@@ -23,14 +25,14 @@ export class WorkshopController {
     return this.workshopService.create(createWorkshopDto);
   }
 
-  @Get(':id')
-  findByCompany(@Param('id') id: string) {
-    return this.workshopService.findByCompany(+id);
-  }
 
   @Get()
-  findAll() {
-    return this.workshopService.findAll();
+  findAll(@Request() req) {
+		if(req.user.role == UserRole.SUPERADMIN){
+			return this.workshopService.findAll();
+		}else{
+			return this.workshopService.findByCompany(req.user.companyId);
+		}
   }
 
   @Patch(':id')

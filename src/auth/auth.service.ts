@@ -1,150 +1,162 @@
-import {BadRequestException, Injectable, UnauthorizedException} from '@nestjs/common';
-import {User, UserRole} from "../users/entities/user.entity";
-import {Repository} from "typeorm";
-import {InjectRepository} from "@nestjs/typeorm";
-import * as bcrypt from "bcrypt";
-import {ConfigService} from '@nestjs/config';
-import {JwtService} from "@nestjs/jwt";
-import {CreateUserDto} from "../users/dto/create-user.dto";
-import {envVariables} from "../common/const/env.const";
+import {
+	BadRequestException,
+	Injectable,
+	UnauthorizedException,
+} from '@nestjs/common';
+import { User, UserRole } from '../users/entities/user.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { envVariables } from '../common/const/env.const';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly configService: ConfigService,
-    private readonly jwtService: JwtService
-  ) {
-  }
+	constructor(
+		@InjectRepository(User)
+		private readonly userRepository: Repository<User>,
+		private readonly configService: ConfigService,
+		private readonly jwtService: JwtService,
+	) {}
 
-  parseBasicToken(rawToken: string) {
-    const basicSplit = rawToken.split(' ');
+	parseBasicToken(rawToken: string) {
+		const basicSplit = rawToken.split(' ');
 
-    if (basicSplit.length !== 2) {
-      throw new BadRequestException('토큰 포멧이 잘못되었습니다.');
-    }
+		if (basicSplit.length !== 2) {
+			throw new BadRequestException('토큰 포멧이 잘못되었습니다.');
+		}
 
-    const [basic, token] = basicSplit;
+		const [basic, token] = basicSplit;
 
+		if (basic.toLowerCase() !== 'basic') {
+			throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+		}
 
-    if (basic.toLowerCase() !== 'basic') {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
-    }
+		const decoded = Buffer.from(token, 'base64').toString('utf-8');
+		const tokenSplit = decoded.split(':');
 
-    const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    const tokenSplit = decoded.split(':');
+		if (tokenSplit.length !== 2) {
+			throw new BadRequestException('토큰 포멧이 잘못되었습니다.');
+		}
+		const [phone, password] = tokenSplit;
 
-    if (tokenSplit.length !== 2) {
-      throw new BadRequestException('토큰 포멧이 잘못되었습니다.');
-    }
-    const [phone, password] = tokenSplit;
+		return {
+			phone,
+			password,
+		};
+	}
 
-    return {
-      phone,
-      password
-    };
-  }
+	parseBearerToken(rawToken: string, isRefreshToken: boolean) {
+		const bearerSplit = rawToken.split(' ');
 
-  parseBearerToken(rawToken: string, isRefreshToken: boolean) {
-    const bearerSplit = rawToken.split(' ');
+		if (bearerSplit.length !== 2) {
+			throw new BadRequestException('토큰 포멧이 잘못되었습니다.');
+		}
 
-    if (bearerSplit.length !== 2) {
-      throw new BadRequestException('토큰 포멧이 잘못되었습니다.');
-    }
+		const [bearer, token] = bearerSplit;
 
-    const [bearer, token] = bearerSplit;
+		if (bearer.toLowerCase() !== 'bearer') {
+			throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+		}
 
-    if (bearer.toLowerCase() !== 'bearer') {
-      throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
-    }
+		try {
+			const payload = this.jwtService.verify(token, {
+				secret: this.configService.get<string>(
+					isRefreshToken
+						? envVariables.refreshTokenSecret
+						: envVariables.accessTokenSecret,
+				),
+			});
+			if (isRefreshToken) {
+				if (payload.type !== 'refresh') {
+					throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+				}
+			} else {
+				if (payload.type !== 'access') {
+					throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
+				}
+			}
+			return payload;
+		} catch (e) {
+			throw new UnauthorizedException('토큰 만료 되었습니다.');
+		}
+	}
 
-    try {
-      const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>(isRefreshToken ? envVariables.refreshTokenSecret : envVariables.accessTokenSecret),
-      });
-      if (isRefreshToken) {
-        if (payload.type !== 'refresh') {
-          throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
-        }
-      } else {
-        if (payload.type !== 'access') {
-          throw new BadRequestException('토큰 포맷이 잘못됐습니다!');
-        }
-      }
-      return payload;
+	async register(rawToken: string, createUserDto: CreateUserDto) {
+		const { phone, password } = this.parseBasicToken(rawToken);
 
-    } catch (e) {
-      throw new UnauthorizedException('토큰 만료 되었습니다.');
-    }
+		const user = await this.userRepository.findOne({ where: { phone } });
 
+		if (user) {
+			throw new BadRequestException('이미 가입한 사용자 입니다.');
+		}
 
-  }
+		const hash = await bcrypt.hash(
+			password,
+			this.configService.getOrThrow<number>(envVariables.hashRounds),
+		);
 
-  async register(rawToken: string, createUserDto: CreateUserDto) {
-    const {phone, password} = this.parseBasicToken(rawToken);
+		const newUser = this.userRepository.create({
+			phone,
+			password: hash,
+			name: createUserDto.name,
+			role: createUserDto.role,
+			companyId: createUserDto.companyId,
+			workshopId: createUserDto.workshopId,
+			icCardNumber: createUserDto.icCardNumber,
+			isActivated: createUserDto.isActive,
+		});
 
-    const user = await this.userRepository.findOne({where: {phone}});
+		await this.userRepository.save(newUser);
 
-    if (user) {
-      throw new BadRequestException('이미 가입한 사용자 입니다.');
-    }
+		return this.userRepository.findOne({ where: { id: newUser.id } });
+	}
 
-    const hash = await bcrypt.hash(password, this.configService.get<number>(envVariables.hashRounds) ?? 10);
+	async authenticate(phone: string, password: string) {
+		const user = await this.userRepository.findOne({ where: { phone } });
 
-    const newUser = this.userRepository.create({
-      phone,
-      password: hash,
-      name: createUserDto.name,
-      role: createUserDto.role,
-      companyId: createUserDto.companyId,
-      workshopId: createUserDto.workshopId,
-      icCardNumber: createUserDto.icCardNumber,
-      isActivated: createUserDto.isActive,
-    });
+		if (!user) {
+			throw new BadRequestException('잘못된 로그인 정보입니다.');
+		}
+		const passOk = await bcrypt.compare(password, user.password);
 
-    await this.userRepository.save(newUser);
+		if (!passOk) {
+			throw new BadRequestException('잘못된 로그인 정보입니다.');
+		}
+		return user;
+	}
 
-    return this.userRepository.findOne({where: {id: newUser.id}});
+	issueToken(user: { id: number; role: UserRole }, isRefreshToken: boolean) {
+		const refreshTokenSecret = this.configService.get<string>(
+			envVariables.refreshTokenSecret,
+		);
+		const accessTokenSecret = this.configService.get<string>(
+			envVariables.accessTokenSecret,
+		);
 
-  }
+		return this.jwtService.sign(
+			{
+				sub: user.id,
+				role: user.role,
+				type: isRefreshToken ? 'refresh' : 'access',
+			},
+			{
+				secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
+				expiresIn: isRefreshToken ? '24h' : '1h',
+			},
+		);
+	}
 
-  async authenticate(phone: string, password: string) {
-    const user = await this.userRepository.findOne({where: {phone}});
+	async login(rawToken: string) {
+		const { phone, password } = this.parseBasicToken(rawToken);
 
-    if (!user) {
-      throw new BadRequestException('잘못된 로그인 정보입니다.');
-    }
-    const passOk = await bcrypt.compare(password, user.password);
+		const user = await this.authenticate(phone, password);
 
-    if (!passOk) {
-      throw new BadRequestException('잘못된 로그인 정보입니다.');
-    }
-    return user;
-  }
-
-  issueToken(user: { id: number, role: UserRole }, isRefreshToken: boolean) {
-    const refreshTokenSecret = this.configService.get<string>(envVariables.refreshTokenSecret);
-    const accessTokenSecret = this.configService.get<string>(envVariables.accessTokenSecret);
-
-    return this.jwtService.sign({
-      sub: user.id,
-      role: user.role,
-      type: isRefreshToken ? 'refresh' : 'access'
-    }, {
-      secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-      expiresIn: isRefreshToken ? '24h' : '1h',
-    })
-  }
-
-  async login(rawToken: string) {
-    const {phone, password} = this.parseBasicToken(rawToken);
-
-    const user = await this.authenticate(phone, password);
-
-    return {
-      refreshToken: this.issueToken(user, true),
-      accessToken: this.issueToken(user, false),
-    };
-  }
+		return {
+			refreshToken: this.issueToken(user, true),
+			accessToken: this.issueToken(user, false),
+		};
+	}
 }
