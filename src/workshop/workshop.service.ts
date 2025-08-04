@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Workshop } from './entities/workshop.entity';
 import { DataSource, Repository } from 'typeorm';
 import { Company } from '../company/entities/company.entity';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 
 @Injectable()
 export class WorkshopService {
@@ -65,7 +69,7 @@ export class WorkshopService {
 	}
 
 	// 회사 하위 조건 목록만.
-	async findAll(userId: number) {
+	async findAll(userId: number, searchKey?: string, searchValue?: string) {
 		const user = await this.userRepository.findOne({
 			where: { id: userId },
 		});
@@ -73,15 +77,35 @@ export class WorkshopService {
 			throw new NotFoundException('User not found');
 		}
 
+		const qb = this.workshopRepository.createQueryBuilder('workshop');
 
-		const workshops = await this.workshopRepository
-			.createQueryBuilder('workshop')
-			.leftJoinAndSelect('workshop.company', 'company')
-			.where('workshop.companyId = :id', { id: user.companyId })
-			.getMany();
+		qb.leftJoinAndSelect('workshop.company', 'company').andWhere(
+			'workshop.deletedAt IS NULL',
+		);
 
+		if (searchKey && searchValue) {
+			const whiteList = [
+				'workshop.name',
+				'workshop.address',
+				'workshop.addressDetail',
+				'company.name',
+			];
+
+			if (whiteList.includes(searchKey)) {
+				qb.andWhere(`${searchKey} LIKE :value`, {
+					value: `%${searchValue}%`,
+				});
+			} else {
+				throw new BadRequestException('잘못된 검색 키입니다.');
+			}
+		}
+		if (user.role !== UserRole.MASTER) {
+			qb.andWhere('users.companyId = :id', { id: user.companyId });
+		}
+
+		const workshops = await qb.getMany();
 		if (!workshops.length) {
-			throw new NotFoundException('No workshops found for the company');
+			throw new NotFoundException('일치하는 정보가 없습니다.');
 		}
 
 		return workshops;
