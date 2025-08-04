@@ -14,7 +14,6 @@ import {
 import { WorkshopService } from './workshop.service';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto';
-import { UserRole } from '../users/entities/user.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('workshop')
@@ -32,11 +31,7 @@ export class WorkshopController {
 		@Query('searchKey') searchKey?: string,
 		@Query('searchValue') searchValue?: string,
 	) {
-		if (req.user.role == UserRole.MASTER) {
-			return this.workshopService.findForMaster();
-		} else {
-			return this.workshopService.findAll(req.user.sub);
-		}
+		return this.workshopService.findAll(req.user.sub, searchKey, searchValue);
 	}
 
 	@Patch(':id')
