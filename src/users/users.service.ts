@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DataSource, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Company } from 'src/company/entities/company.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
@@ -102,7 +106,7 @@ export class UsersService {
 		};
 	}
 
-	async findForAdmin(userId: number) {
+	async findForAdmin(userId: number, name?: string) {
 		const user = await this.userRepository.findOne({
 			where: { id: userId },
 		});
@@ -123,14 +127,45 @@ export class UsersService {
 		return users;
 	}
 
-	async findAll() {
-		const users = await this.userRepository
-			.createQueryBuilder('users')
-			.andWhere('users.deletedAt IS NULL')
-			.getMany();
+	async findAll(userId: number, searchKey?: string, searchValue?: string) {
+		const user = await this.userRepository.findOne({
+			where: { id: userId },
+		});
+
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const qb = this.userRepository.createQueryBuilder('users');
+
+		qb.leftJoinAndSelect('users.company', 'company')
+			.leftJoinAndSelect('users.workshop', 'workshop')
+			.where('users.deletedAt IS NULL');
+
+		if (searchKey && searchValue) {
+			const whiteList = [
+				'users.name',
+				'users.phone',
+				'company.name',
+				'workshop.name',
+			];
+
+			if (whiteList.includes(searchKey)) {
+				qb.andWhere(`${searchKey} LIKE :value`, {
+					value: `%${searchValue}%`,
+				});
+			} else {
+				throw new BadRequestException('잘못된 검색 키입니다.');
+			}
+		}
+
+		if (user.role !== UserRole.MASTER) {
+			qb.andWhere('users.companyId = :id', { id: user.companyId });
+		}
+		const users = await qb.getMany();
 
 		if (!users.length) {
-			throw new NotFoundException('No users found for the company');
+			throw new NotFoundException('일치하는 정보가 없습니다.');
 		}
 
 		return users;

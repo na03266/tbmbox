@@ -8,6 +8,7 @@ import {
 	ParseIntPipe,
 	Patch,
 	Post,
+	Query,
 	Request,
 	UseInterceptors,
 } from '@nestjs/common';
@@ -25,21 +26,23 @@ export class UsersController {
 	create(@Body() createUserByAdminDto: CreateUserByAdminDto) {
 		return this.usersService.create(createUserByAdminDto);
 	}
+
 	@Post(':id/reset')
 	resetPassword(@Param('id', new ParseIntPipe()) id: number) {
 		return this.usersService.resetPassword(id);
 	}
 
 	@Get()
-	findAll(@Request() req) {
+	findAll(
+		@Request() req,
+		@Query('searchKey') searchKey?: string,
+		@Query('searchValue') searchValue?: string,
+	) {
 		switch (req.user.role) {
-			case UserRole.MASTER:
-				return this.usersService.findAll();
-			case UserRole.ADMIN:
-			case UserRole.SUPERADMIN:
-				return this.usersService.findForAdmin(req.user.id);
 			case UserRole.USER:
 				return this.usersService.findOne(req.user.id);
+			default:
+				return this.usersService.findAll(req.user.id, searchKey, searchValue);
 		}
 	}
 

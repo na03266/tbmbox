@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ClassSerializerInterceptor, Injectable, NotFoundException, UseInterceptors } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './entities/task.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
@@ -26,6 +26,7 @@ export class TaskService {
 				.values({
 					title: createTaskDto.title,
 					description: createTaskDto.description,
+					companyId: createTaskDto.companyId,
 				})
 				.execute();
 
@@ -70,13 +71,10 @@ export class TaskService {
 		if (!task) {
 			throw new NotFoundException('Task not found');
 		}
-		const updatedTask = {
-			...task,
-			...updateTaskDto,
-		};
-		await this.taskRepository.update(id, updatedTask);
 
-		return task;
+		await this.taskRepository.update(id, updateTaskDto);
+
+		return await this.taskRepository.findOne({ where: { id } });
 	}
 
 	async remove(id: number) {
@@ -89,5 +87,22 @@ export class TaskService {
 		await this.taskRepository.softRemove(task);
 
 		return id;
+	}
+
+	async removeMultiple(ids: number[]) {
+		const tasks = await this.taskRepository.find({
+			where: { id: In(ids) },
+		});
+
+		if (tasks.length === 0) {
+			throw new NotFoundException('삭제할 작업이 없습니다.');
+		}
+
+		if (tasks.length !== ids.length) {
+			throw new NotFoundException('일부 작업을 찾을 수 없습니다.');
+		}
+
+		await this.taskRepository.softRemove(tasks);
+		return tasks.map((task) => task.id); // 실제 삭제된 ID만 리턴
 	}
 }
