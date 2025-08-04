@@ -106,7 +106,7 @@ export class AuthService {
 			companyId: createUserDto.companyId,
 			workshopId: createUserDto.workshopId,
 			icCardNumber: createUserDto.icCardNumber,
-			isActivated: createUserDto.isActive,
+			isActivated: createUserDto.isActivated,
 		});
 
 		await this.userRepository.save(newUser);
@@ -144,7 +144,7 @@ export class AuthService {
 			},
 			{
 				secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-				expiresIn: isRefreshToken ? '24h' : '1h',
+				expiresIn: isRefreshToken ? '7d' : '24h',
 			},
 		);
 	}

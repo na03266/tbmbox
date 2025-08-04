@@ -25,6 +25,7 @@ export class TaskService {
 				.into(Task)
 				.values({
 					title: createTaskDto.title,
+					description: createTaskDto.description,
 				})
 				.execute();
 
@@ -63,23 +64,30 @@ export class TaskService {
 		return task;
 	}
 
-	update(id: number, updateTaskDto: UpdateTaskDto) {
-		const task = this.taskRepository.findOne({ where: { id } });
+	async update(id: number, updateTaskDto: UpdateTaskDto) {
+		const task = await this.taskRepository.findOne({ where: { id } });
 
 		if (!task) {
 			throw new NotFoundException('Task not found');
 		}
+		const updatedTask = {
+			...task,
+			...updateTaskDto,
+		};
+		await this.taskRepository.update(id, updatedTask);
 
 		return task;
 	}
 
-	remove(id: number) {
-		const task = this.taskRepository.findOne({ where: { id } });
+	async remove(id: number) {
+		const task = await this.taskRepository.findOne({ where: { id } });
 
 		if (!task) {
 			throw new NotFoundException('Task not found');
 		}
 
-		return task;
+		await this.taskRepository.softRemove(task);
+
+		return id;
 	}
 }

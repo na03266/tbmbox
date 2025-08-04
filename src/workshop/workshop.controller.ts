@@ -28,10 +28,10 @@ export class WorkshopController {
 
   @Get()
   findAll(@Request() req) {
-		if(req.user.role == UserRole.SUPERADMIN){
-			return this.workshopService.findAll();
+		if(req.user.role == UserRole.MASTER){
+			return this.workshopService.findForMaster();
 		}else{
-			return this.workshopService.findByCompany(req.user.companyId);
+			return this.workshopService.findAll(req.user.sub);
 		}
   }
 

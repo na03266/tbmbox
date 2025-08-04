@@ -6,6 +6,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Company } from 'src/company/entities/company.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
 import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
+import * as bcrypt from 'bcrypt';
+import { envVariables } from '../common/const/env.const';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +19,7 @@ export class UsersService {
 		private readonly companyRepository: Repository<Company>,
 		@InjectRepository(Workshop)
 		private readonly workshopRepository: Repository<Workshop>,
+		private readonly configService: ConfigService,
 		private readonly dataSource: DataSource,
 	) {}
 
@@ -40,6 +44,10 @@ export class UsersService {
 			if (!workshop) {
 				throw new NotFoundException('Workshop not found');
 			}
+			const hash = await bcrypt.hash(
+				createUserByAdminDto.password,
+				this.configService.getOrThrow<number>(envVariables.hashRounds),
+			);
 
 			const user = await qr.manager
 				.createQueryBuilder()
@@ -47,7 +55,7 @@ export class UsersService {
 				.into(User)
 				.values({
 					phone: createUserByAdminDto.phone,
-					password: createUserByAdminDto.password,
+					password: hash,
 					name: createUserByAdminDto.name,
 					role: createUserByAdminDto.role,
 					company,
@@ -73,26 +81,67 @@ export class UsersService {
 		}
 	}
 
-	async findByCompany(companyId: number) {
-		const workshops = await this.workshopRepository
-			.createQueryBuilder('workshops')
-			.where('workshops.companyId = :id', { id: companyId })
-			.andWhere('workshops.deletedAt IS NULL')
+	async resetPassword(id: number) {
+		const user = await this.userRepository.findOne({
+			where: { id },
+		});
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const password = 'a12345678';
+		const hash = await bcrypt.hash(
+			password,
+			this.configService.getOrThrow<number>(envVariables.hashRounds),
+		);
+
+		await this.userRepository.update(id, { password: hash });
+
+		return {
+			password,
+		};
+	}
+
+	async findForAdmin(userId: number) {
+		const user = await this.userRepository.findOne({
+			where: { id: userId },
+		});
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const users = await this.userRepository
+			.createQueryBuilder('users')
+			.where('users.companyId = :id', { id: user.companyId })
+			.andWhere('users.deletedAt IS NULL')
 			.getMany();
 
-		if (!workshops.length) {
+		if (!users.length) {
 			throw new NotFoundException('No users found for the company');
 		}
 
-		return workshops;
+		return users;
 	}
 
-	async findOne(phone: string) {
+	async findAll() {
+		const users = await this.userRepository
+			.createQueryBuilder('users')
+			.andWhere('users.deletedAt IS NULL')
+			.getMany();
+
+		if (!users.length) {
+			throw new NotFoundException('No users found for the company');
+		}
+
+		return users;
+	}
+
+	async findOne(id: number) {
 		const user = await this.workshopRepository
 			.createQueryBuilder('user')
 			.leftJoin('user.workshop', 'workshop')
 			.leftJoin('user.company', 'company')
-			.where('user.phone = :phone', { phone: phone })
+			.where('user.id = :id', { id })
 			.getOne();
 
 		if (!user) {
@@ -101,22 +150,20 @@ export class UsersService {
 		return user;
 	}
 
-	async update(phone: string, updateUserDto: UpdateUserDto) {
+	async update(id: number, updateUserDto: UpdateUserDto) {
 		const qr = this.dataSource.createQueryRunner();
 		await qr.connect();
 		await qr.startTransaction();
 
 		try {
 			const user = await qr.manager.findOne(User, {
-				where: { phone },
+				where: { id },
 				relations: ['company', 'workshop'],
 			});
+
 			if (!user) {
 				throw new NotFoundException('User not found');
 			}
-
-			let newWorkshop;
-			let newCompany;
 
 			if (updateUserDto.companyId) {
 				const company = await qr.manager.findOne(Company, {
@@ -125,7 +172,6 @@ export class UsersService {
 				if (!company) {
 					throw new NotFoundException('Company not found');
 				}
-				newCompany = company;
 			}
 
 			if (updateUserDto.workshopId) {
@@ -135,21 +181,24 @@ export class UsersService {
 				if (!workshop) {
 					throw new NotFoundException('Workshop not found');
 				}
-				newWorkshop = workshop;
 			}
 
 			const userUpdateFields = {
 				...updateUserDto,
-				...(newCompany && { company: newCompany }),
-				...(newWorkshop && { company: newWorkshop }),
 			};
+
 			await qr.manager
 				.createQueryBuilder()
 				.update(User)
 				.set(userUpdateFields)
-				.where('phone = :phone', { phone })
+				.where('id = :id', { id })
 				.execute();
+
 			await qr.commitTransaction();
+			return await qr.manager.findOne(User, {
+				where: { id },
+				relations: ['company', 'workshop'],
+			});
 		} catch (e) {
 			await qr.rollbackTransaction();
 			throw e;
@@ -158,11 +207,10 @@ export class UsersService {
 		}
 	}
 
-	async remove(phone: string) {
+	async remove(id: number) {
 		const user = this.workshopRepository
 			.createQueryBuilder('user')
-			.leftJoin('user.workshop', 'workshop')
-			.where('user.phone = :phone', { phone: phone })
+			.where('user.id = :id', { id })
 			.getOne();
 
 		if (!user) {
@@ -173,9 +221,9 @@ export class UsersService {
 			.createQueryBuilder()
 			.softDelete()
 			.from(User)
-			.where('phone = :phone', { phone: phone })
+			.where('id = :id', { id })
 			.execute();
 
-		return phone;
+		return id;
 	}
 }

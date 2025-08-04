@@ -1,26 +1,38 @@
-import {IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString} from "class-validator";
-import {UserRole} from "../entities/user.entity";
+import {
+	IsBoolean,
+	IsEnum,
+	IsNotEmpty,
+	IsNumber,
+	IsOptional,
+	IsString,
+} from 'class-validator';
+import { UserRole } from '../entities/user.entity';
+import { Type } from 'class-transformer';
 
 export class CreateUserDto {
-    @IsNotEmpty()
-    @IsString()
-    name: string;
+	@IsNotEmpty()
+	@IsString()
+	name: string;
 
-    @IsEnum(UserRole)
-    role: UserRole = UserRole.USER;
+	@IsEnum(UserRole)
+	@Type(() => Number)
+	role: UserRole;
 
-    @IsNotEmpty()
-    @IsNumber()
-    companyId: number
+	@IsNotEmpty()
+	@IsNumber()
+	@Type(() => Number)
+	companyId: number;
 
-    @IsOptional()
-    @IsNumber()
-    workshopId: number
+	@IsOptional()
+	@IsNumber()
+	@Type(() => Number)
+	workshopId: number;
 
-    @IsOptional()
-    @IsString()
-    icCardNumber: string
+	@IsOptional()
+	@IsString()
+	icCardNumber: string;
 
-    @IsBoolean()
-    isActive: boolean = false;
+	@IsBoolean()
+	@Type(() => Boolean)
+	isActivated: boolean;
 }

@@ -26,6 +26,10 @@ export class TaskController {
   update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
     return this.taskService.update(+id, updateTaskDto);
   }
+	@Patch(':workshopId/')
+	updateSelectedItems(@Param('workshopId') workshopId: string, @Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
+
+	}
 
   @Delete(':id')
   remove(@Param('id') id: string) {

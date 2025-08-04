@@ -14,6 +14,10 @@ import { TaskModule } from './task/task.module';
 import { AuthModule } from './auth/auth.module';
 import { envVariables } from './common/const/env.const';
 import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
+import { TbmModule } from './tbm/tbm.module';
+import { ChecklistModule } from './checklist/checklist.module';
+import { ToolModule } from './tool/tool.module';
+import { TbmSnapshotModule } from './tbm-snapshot/tbm-snapshot.module';
 
 @Module({
 	imports: [
@@ -51,6 +55,10 @@ import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware
 		WorkshopModule,
 		TaskModule,
 		AuthModule,
+		TbmModule,
+		ChecklistModule,
+		ToolModule,
+		TbmSnapshotModule,
 	],
 })
 export class AppModule implements NestModule {

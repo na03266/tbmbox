@@ -1,35 +1,63 @@
-import {Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe} from '@nestjs/common';
+import {
+	Body,
+	ClassSerializerInterceptor,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	ParseIntPipe,
+	Patch,
+	Post,
+	Request,
+	UseInterceptors,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import {CreateUserByAdminDto} from "./dto/create-user-by-admin.dto";
+import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
+import { UserRole } from './entities/user.entity';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+	constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserByAdminDto: CreateUserByAdminDto) {
-    return this.usersService.create(createUserByAdminDto);
-  }
+	@Post()
+	create(@Body() createUserByAdminDto: CreateUserByAdminDto) {
+		return this.usersService.create(createUserByAdminDto);
+	}
+	@Post(':id/reset')
+	resetPassword(@Param('id', new ParseIntPipe()) id: number) {
+		return this.usersService.resetPassword(id);
+	}
 
-  @Get()
-  findByCompany(@Param('id', new ParseIntPipe()) id: number) {
-    return this.usersService.findByCompany(id);
-  }
+	@Get()
+	findAll(@Request() req) {
+		switch (req.user.role) {
+			case UserRole.MASTER:
+				return this.usersService.findAll();
+			case UserRole.ADMIN:
+			case UserRole.SUPERADMIN:
+				return this.usersService.findForAdmin(req.user.id);
+			case UserRole.USER:
+				return this.usersService.findOne(req.user.id);
+		}
+	}
 
-  @Get(':phone')
-  findOne(@Param('phone') phone: string) {
-    return this.usersService.findOne(phone);
-  }
+	@Get(':id')
+	findOne(@Param('id', new ParseIntPipe()) id: number) {
+		return this.usersService.findOne(id);
+	}
 
-  @Patch(':phone')
-  update(@Param('phone') phone: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(phone, updateUserDto);
-  }
+	@Patch(':id')
+	update(
+		@Param('id', new ParseIntPipe()) id: number,
+		@Body() updateUserDto: UpdateUserDto,
+	) {
+		return this.usersService.update(id, updateUserDto);
+	}
 
-  @Delete(':phone')
-  remove(@Param('phone') phone: string) {
-    return this.usersService.remove(phone);
-  }
+	@Delete(':id')
+	remove(@Param('id', new ParseIntPipe()) id: number) {
+		return this.usersService.remove(id);
+	}
 }
