@@ -1,137 +1,174 @@
-import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
-import {CreateCompanyDto} from './dto/create-company.dto';
-import {UpdateCompanyDto} from './dto/update-company.dto';
-import {Company} from "./entities/company.entity";
-import {DataSource, Repository} from "typeorm";
-import {InjectRepository} from "@nestjs/typeorm";
+import {
+	BadRequestException,
+	ConflictException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
+import { CreateCompanyDto } from './dto/create-company.dto';
+import { UpdateCompanyDto } from './dto/update-company.dto';
+import { Company } from './entities/company.entity';
+import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User, UserRole } from '../users/entities/user.entity';
 
 @Injectable()
 export class CompanyService {
+	constructor(
+		@InjectRepository(Company)
+		private readonly companyRepository: Repository<Company>,
+		@InjectRepository(User)
+		private readonly userRepository: Repository<User>,
+		private readonly dataSource: DataSource,
+	) {}
 
-    constructor(
-        @InjectRepository(Company)
-        private readonly companyRepository: Repository<Company>,
-        private readonly dataSource: DataSource,
-    ) {
-    }
+	async create(createCompanyDto: CreateCompanyDto) {
+		const qr = this.dataSource.createQueryRunner();
+		await qr.connect();
+		await qr.startTransaction();
 
-    async create(createCompanyDto: CreateCompanyDto) {
-        const qr = this.dataSource.createQueryRunner();
-        await qr.connect();
-        await qr.startTransaction();
+		try {
+			const company = await qr.manager
+				.createQueryBuilder()
+				.insert()
+				.into(Company)
+				.values({
+					name: createCompanyDto.name,
+					code: createCompanyDto.code,
+					address: createCompanyDto.address,
+					addressDetail: createCompanyDto.addressDetail,
+				})
+				.execute();
 
-        try {
-            const company = await qr.manager.createQueryBuilder()
-                .insert()
-                .into(Company)
-                .values({
-                    name: createCompanyDto.name,
-                    code: createCompanyDto.code,
-                    address: createCompanyDto.address,
-                    addressDetail: createCompanyDto.addressDetail
-                })
-                .execute();
+			const companyId = company.identifiers[0].id;
 
-            const companyId = company.identifiers[0].id;
+			await qr.commitTransaction();
 
-            await qr.commitTransaction();
+			return await this.companyRepository.findOne({
+				where: { id: companyId },
+			});
+		} catch (e) {
+			await qr.rollbackTransaction();
+			throw e;
+		} finally {
+			await qr.release();
+		}
+	}
 
-            return await this.companyRepository.findOne({
-                where: {id: companyId},
-            });
-        } catch (e) {
-            await qr.rollbackTransaction();
-            throw e;
-        } finally {
-            await qr.release();
-        }
-    }
+	async findAll(userId: number, searchKey?: string, searchValue?: string) {
+		const user = await this.userRepository.findOne({
+			where: { id: userId },
+		});
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
 
-    async findAll(name?: string) {
-        const qb = this.companyRepository.createQueryBuilder('company');
+		const qb = this.companyRepository.createQueryBuilder('company');
 
-        if (name) {
-            qb.where('company.name LIKE :title', {title: `%${name}%`});
-        }
-        return await qb.getMany();
-    }
+		if (searchKey && searchValue) {
+			const whiteList = [
+				'company.name',
+				'company.code',
+				'company.address',
+				'company.addressDetail',
+			];
 
-    async findOne(id: number) {
-        const company = await this.companyRepository.createQueryBuilder('company')
-            .where('company.id = :id', {id})
-            .andWhere('company.deletedAt IS NULL')
-            .getOne();
+			if (whiteList.includes(searchKey)) {
+				qb.andWhere(`${searchKey} LIKE :value`, {
+					value: `%${searchValue}%`,
+				});
+			} else {
+				throw new BadRequestException('잘못된 검색 키입니다.');
+			}
+		}
 
-        if (!company) {
-            throw new NotFoundException('Company not found');
-        }
-        return company;
-    }
+		if (user.role !== UserRole.MASTER) {
+			qb.andWhere('users.companyId = :id', { id: user.companyId });
+		}
 
-    async update(id: number, updateCompanyDto: UpdateCompanyDto) {
-        const qr = this.dataSource.createQueryRunner();
-        await qr.connect();
-        await qr.startTransaction();
+		const company = await qb.getMany();
 
-        try {
-            const company = await qr.manager.findOne(Company, {where: {id}});
-            if (!company) {
-                throw new NotFoundException('Company not found');
-            }
+		if (!company) {
+			throw new NotFoundException('Company not found');
+		}
 
-            // 이름 중복 검사
-            if (updateCompanyDto.name) {
-                const existingByName = await qr.manager.findOne(
-                    Company,
-                    {where: {name: updateCompanyDto.name},}
-                );
+		return company;
+	}
 
-                if (existingByName && existingByName.id !== id) {
-                    throw new ConflictException('Company name already exists');
-                }
-            }
+	async findOne(id: number) {
+		const company = await this.companyRepository
+			.createQueryBuilder('company')
+			.where('company.id = :id', { id })
+			.andWhere('company.deletedAt IS NULL')
+			.getOne();
 
-            // 코드 중복 검사
-            if (updateCompanyDto.code) {
-                const existingByCode = await qr.manager.findOne(
-                    Company,
-                    {where: {code: updateCompanyDto.code},}
-                );
+		if (!company) {
+			throw new NotFoundException('Company not found');
+		}
+		return company;
+	}
 
-                if (existingByCode && existingByCode.id !== id) {
-                    throw new ConflictException('Company code already exists');
-                }
-            }
+	async update(id: number, updateCompanyDto: UpdateCompanyDto) {
+		const qr = this.dataSource.createQueryRunner();
+		await qr.connect();
+		await qr.startTransaction();
 
-            await qr.manager.update(Company, id, updateCompanyDto);
-            await qr.commitTransaction();
+		try {
+			const company = await qr.manager.findOne(Company, { where: { id } });
+			if (!company) {
+				throw new NotFoundException('Company not found');
+			}
 
-            // 업데이트 후 엔티티 반환
-            return await qr.manager.findOneBy(Company, {id});
+			// 이름 중복 검사
+			if (updateCompanyDto.name) {
+				const existingByName = await qr.manager.findOne(Company, {
+					where: { name: updateCompanyDto.name },
+				});
 
-        } catch (e) {
-            await qr.rollbackTransaction();
-            throw e;
-        } finally {
-            await qr.release();
-        }
-    }
+				if (existingByName && existingByName.id !== id) {
+					throw new ConflictException('Company name already exists');
+				}
+			}
 
-    async remove(id: number) {
-        const company = this.companyRepository.findOne({
-            where: {
-                id,
-            },
-        });
-        if (!company) {
-            throw new NotFoundException('Company not found');
-        }
+			// 코드 중복 검사
+			if (updateCompanyDto.code) {
+				const existingByCode = await qr.manager.findOne(Company, {
+					where: { code: updateCompanyDto.code },
+				});
 
-        await this.companyRepository.createQueryBuilder()
-            .softDelete()
-            .where('id = :id', {id})
-            .execute();
+				if (existingByCode && existingByCode.id !== id) {
+					throw new ConflictException('Company code already exists');
+				}
+			}
 
-        return id;
-    }
+			await qr.manager.update(Company, id, updateCompanyDto);
+			await qr.commitTransaction();
+
+			// 업데이트 후 엔티티 반환
+			return await qr.manager.findOneBy(Company, { id });
+		} catch (e) {
+			await qr.rollbackTransaction();
+			throw e;
+		} finally {
+			await qr.release();
+		}
+	}
+
+	async remove(id: number) {
+		const company = this.companyRepository.findOne({
+			where: {
+				id,
+			},
+		});
+		if (!company) {
+			throw new NotFoundException('Company not found');
+		}
+
+		await this.companyRepository
+			.createQueryBuilder()
+			.softDelete()
+			.where('id = :id', { id })
+			.execute();
+
+		return id;
+	}
 }
