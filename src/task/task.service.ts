@@ -4,16 +4,17 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './entities/task.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User, UserRole } from '../users/entities/user.entity';
+import { UserRole } from '../users/entities/user.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
+import { Tool } from '../tool/entities/tool.entity';
 
 @Injectable()
 export class TaskService {
 	constructor(
 		@InjectRepository(Task)
 		private readonly taskRepository: Repository<Task>,
-		@InjectRepository(User)
-		private readonly userRepository: Repository<User>,
+		@InjectRepository(Tool)
+		private readonly toolRepository: Repository<Tool>,
 		@InjectRepository(Workshop)
 		private readonly workshopRepository: Repository<Workshop>,
 		private readonly dataSource: DataSource,
@@ -124,7 +125,7 @@ export class TaskService {
 		return tasks.map((task) => task.id); // 실제 삭제된 ID만 리턴
 	}
 
-	async findByWorkshop(workshopId: number, name?: string) {
+	async findByWorkshop(workshopId: number, title?: string) {
 		// 워크샵 정보와 연관된 작업들 조회
 		const workshop = await this.workshopRepository.findOne({
 			where: { id: workshopId },
@@ -145,8 +146,8 @@ export class TaskService {
 			companyId: workshop.companyId,
 		});
 
-		if (name) {
-			qb.andWhere('task.title LIKE :title', { title: `%${name}%` });
+		if (title) {
+			qb.andWhere('task.title LIKE :title', { title: `%${title}%` });
 		}
 		const allTasks = await qb.getMany();
 
@@ -157,5 +158,28 @@ export class TaskService {
 			title: task.title,
 			isActivated: assignedTaskIds.has(task.id),
 		}));
+	}
+
+	async updateTools(taskId: number, toolIds: number[]) {
+		const task = await this.taskRepository.findOne({
+			where: { id: taskId },
+			relations: ['tools'],
+		});
+
+		if (!task) {
+			throw new NotFoundException('task not found');
+		}
+
+		const tools = await this.toolRepository.findBy({
+			id: In(toolIds),
+		});
+
+		if (!tools.length) {
+			throw new NotFoundException('tasks not found');
+		}
+
+		task.tools = tools;
+
+		return this.taskRepository.save(task);
 	}
 }

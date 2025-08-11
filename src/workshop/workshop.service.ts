@@ -186,7 +186,7 @@ export class WorkshopService {
 		if (workshops.length !== ids.length) {
 			throw new NotFoundException('일부 작업장을 찾을 수 없습니다.');
 		}
-		return this.workshopRepository.softRemove(await workshops);
+		return this.workshopRepository.softRemove(workshops);
 	}
 
 

@@ -40,5 +40,4 @@ export class Task extends BaseTable {
 	@ManyToMany(() => Tool, (tool) => tool.tasks)
 	@JoinTable()
 	tools: Tool[]
-
 }

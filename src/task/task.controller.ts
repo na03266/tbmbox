@@ -36,9 +36,9 @@ export class TaskController {
 	@Get(':id/workshop')
 	findByWorkshop(
 		@Param('id', ParseIntPipe) id: number,
-		@Query('name') name?: string,
+		@Query('title') title?: string,
 	) {
-		return this.taskService.findByWorkshop(id, name);
+		return this.taskService.findByWorkshop(id, title);
 	}
 
 	@Get(':id')
@@ -52,6 +52,14 @@ export class TaskController {
 		@Body() updateTaskDto: UpdateTaskDto,
 	) {
 		return this.taskService.update(+id, updateTaskDto);
+	}
+	@Patch(':id/tools')
+	updateTools(
+		@Param('id', ParseIntPipe) id: number,
+		@Body('toolIds', new ParseArrayPipe({ items: Number, separator: ',' }))
+		toolIds: number[],
+	) {
+		return this.taskService.updateTools(id, toolIds);
 	}
 
 	@Delete('multiple')
