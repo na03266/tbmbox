@@ -18,6 +18,7 @@ import { TbmModule } from './tbm/tbm.module';
 import { ChecklistModule } from './checklist/checklist.module';
 import { ToolModule } from './tool/tool.module';
 import { TbmSnapshotModule } from './tbm-snapshot/tbm-snapshot.module';
+import { IntegratedToolModule } from './integrated-tool/integrated-tool.module';
 
 @Module({
 	imports: [
@@ -59,6 +60,7 @@ import { TbmSnapshotModule } from './tbm-snapshot/tbm-snapshot.module';
 		ChecklistModule,
 		ToolModule,
 		TbmSnapshotModule,
+		IntegratedToolModule,
 	],
 })
 export class AppModule implements NestModule {

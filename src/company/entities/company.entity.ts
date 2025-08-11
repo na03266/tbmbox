@@ -3,6 +3,7 @@ import { Workshop } from '../../workshop/entities/workshop.entity';
 import { User } from '../../users/entities/user.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Task } from '../../task/entities/task.entity';
+import { Tool } from '../../tool/entities/tool.entity';
 
 @Entity()
 export class Company extends BaseTable {
@@ -32,4 +33,7 @@ export class Company extends BaseTable {
 
 	@OneToMany(() => Task, (task) => task.company)
 	tasks: Task[];
+
+	@OneToMany(() => Tool, (tool) => tool.company)
+	tools: Tool[];
 }

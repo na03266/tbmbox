@@ -5,6 +5,8 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseArrayPipe,
+	ParseIntPipe,
 	Patch,
 	Post,
 	Query,
@@ -31,6 +33,7 @@ export class WorkshopController {
 		@Query('searchKey') searchKey?: string,
 		@Query('searchValue') searchValue?: string,
 	) {
+		console.log(req.user);
 		return this.workshopService.findAll(req.user.sub, searchKey, searchValue);
 	}
 
@@ -40,6 +43,15 @@ export class WorkshopController {
 		@Body() updateWorkshopDto: UpdateWorkshopDto,
 	) {
 		return this.workshopService.update(+id, updateWorkshopDto);
+	}
+
+	@Patch(':id/tasks')
+	updateTasks(
+		@Param('id', ParseIntPipe) id: number,
+		@Body('taskIds', new ParseArrayPipe({ items: Number, separator: ',' }))
+		taskIds: number[],
+	) {
+		return this.workshopService.updateTasks(id, taskIds);
 	}
 
 	@Delete(':id')

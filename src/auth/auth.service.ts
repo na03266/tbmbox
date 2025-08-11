@@ -115,7 +115,10 @@ export class AuthService {
 	}
 
 	async authenticate(phone: string, password: string) {
-		const user = await this.userRepository.findOne({ where: { phone } });
+		const user = await this.userRepository.findOne({
+			where: { phone },
+			relations: ['company'],
+		});
 
 		if (!user) {
 			throw new BadRequestException('잘못된 로그인 정보입니다.');
@@ -128,7 +131,15 @@ export class AuthService {
 		return user;
 	}
 
-	issueToken(user: { id: number; role: UserRole }, isRefreshToken: boolean) {
+	issueToken(
+		user: {
+			id: number;
+			companyId: number;
+			workshopId?: number;
+			role: UserRole;
+		},
+		isRefreshToken: boolean,
+	) {
 		const refreshTokenSecret = this.configService.get<string>(
 			envVariables.refreshTokenSecret,
 		);
@@ -140,6 +151,8 @@ export class AuthService {
 			{
 				sub: user.id,
 				role: user.role,
+				companyId: user.companyId,
+				workshopId: user.workshopId,
 				type: isRefreshToken ? 'refresh' : 'access',
 			},
 			{

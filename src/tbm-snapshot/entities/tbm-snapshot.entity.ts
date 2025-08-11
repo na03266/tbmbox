@@ -20,5 +20,4 @@ export class TbmSnapshot extends BaseTable {
 
 	@Column()
 	action: 'UPDATE' | 'DELETE';
-
 }

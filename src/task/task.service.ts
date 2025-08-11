@@ -1,15 +1,21 @@
-import { ClassSerializerInterceptor, Injectable, NotFoundException, UseInterceptors } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './entities/task.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User, UserRole } from '../users/entities/user.entity';
+import { Workshop } from '../workshop/entities/workshop.entity';
 
 @Injectable()
 export class TaskService {
 	constructor(
 		@InjectRepository(Task)
 		private readonly taskRepository: Repository<Task>,
+		@InjectRepository(User)
+		private readonly userRepository: Repository<User>,
+		@InjectRepository(Workshop)
+		private readonly workshopRepository: Repository<Workshop>,
 		private readonly dataSource: DataSource,
 	) {}
 
@@ -45,11 +51,23 @@ export class TaskService {
 	}
 
 	/// pagination
-	findAll(name?: string) {
+	findAll(req, name?: string) {
 		const qb = this.taskRepository.createQueryBuilder('task');
 
+		qb.where('task.deletedAt IS NULL');
+
+		if (req?.user?.role !== UserRole.MASTER) {
+			qb.andWhere('task.companyId = :id', { id: req.user.companyId });
+		}
+
+		if (req?.user?.role === UserRole.USER && req.user.workshopId) {
+			qb.andWhere('task.workshopId = :workshopId', {
+				workshopId: req.user.workshopId,
+			});
+		}
+
 		if (name) {
-			qb.where('task.title LIKE :title', { title: `%${name}%` });
+			qb.andWhere('task.title LIKE :title', { title: `%${name}%` });
 		}
 
 		return qb.getMany();

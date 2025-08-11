@@ -5,6 +5,7 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseArrayPipe, ParseIntPipe,
 	Patch,
 	Post,
 	Query,
@@ -28,7 +29,7 @@ export class TaskController {
 	@Get()
 	findAll(@Request() req, @Query('name') name?: string) {
 		/// 관리자용, 하위 관리자용, 사용자용
-		return this.taskService.findAll(name);
+		return this.taskService.findAll(req, name);
 	}
 
 	@Get(':id')
@@ -37,24 +38,23 @@ export class TaskController {
 	}
 
 	@Patch(':id')
-	update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
+	update(
+		@Param('id', ParseIntPipe) id: string,
+		@Body() updateTaskDto: UpdateTaskDto,
+	) {
 		return this.taskService.update(+id, updateTaskDto);
 	}
 
-	@Patch(':workshopId/')
-	updateSelectedItems(
-		@Param('workshopId') workshopId: string,
-		@Param('id') id: string,
-		@Body() updateTaskDto: UpdateTaskDto,
-	) {}
+	@Delete('multiple')
+	removeMultiple(
+		@Body('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
+		ids: number[],
+	) {
+		return this.taskService.removeMultiple(ids);
+	}
 
 	@Delete(':id')
 	remove(@Param('id') id: string) {
 		return this.taskService.remove(+id);
-	}
-
-	@Delete('multiple')
-	removeMultiple(@Body('ids') ids: number[]) {
-		return this.taskService.removeMultiple(ids);
 	}
 }

@@ -10,6 +10,7 @@ import { Company } from './entities/company.entity';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
+import { whiteList } from '../common/const/whitelist.const';
 
 @Injectable()
 export class CompanyService {
@@ -64,15 +65,17 @@ export class CompanyService {
 
 		const qb = this.companyRepository.createQueryBuilder('company');
 
+		qb.where('company.deletedAt IS NULL');
+
 		if (searchKey && searchValue) {
-			const whiteList = [
-				'company.name',
-				'company.code',
-				'company.address',
-				'company.addressDetail',
+			const tempWhiteList = [
+				whiteList.companyName,
+				whiteList.companyCode,
+				whiteList.companyAddress,
+				whiteList.companyAddressDetail,
 			];
 
-			if (whiteList.includes(searchKey)) {
+			if (tempWhiteList.includes(searchKey)) {
 				qb.andWhere(`${searchKey} LIKE :value`, {
 					value: `%${searchValue}%`,
 				});

@@ -13,6 +13,7 @@ import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import * as bcrypt from 'bcrypt';
 import { envVariables } from '../common/const/env.const';
 import { ConfigService } from '@nestjs/config';
+import { whiteList } from '../common/const/whitelist.const';
 
 @Injectable()
 export class UsersService {
@@ -143,14 +144,14 @@ export class UsersService {
 			.where('users.deletedAt IS NULL');
 
 		if (searchKey && searchValue) {
-			const whiteList = [
-				'users.name',
-				'users.phone',
-				'company.name',
-				'workshop.name',
+			const tempWhiteList = [
+				whiteList.userName,
+				whiteList.userPhone,
+				whiteList.companyName,
+				whiteList.workshopName,
 			];
 
-			if (whiteList.includes(searchKey)) {
+			if (tempWhiteList.includes(searchKey)) {
 				qb.andWhere(`${searchKey} LIKE :value`, {
 					value: `%${searchValue}%`,
 				});
@@ -162,6 +163,10 @@ export class UsersService {
 		if (user.role !== UserRole.MASTER) {
 			qb.andWhere('users.companyId = :id', { id: user.companyId });
 		}
+		qb.orderBy('users.role', 'ASC')
+			.addOrderBy('users.name', 'ASC')
+			.addOrderBy('users.id', 'DESC');
+
 		const users = await qb.getMany();
 
 		if (!users.length) {

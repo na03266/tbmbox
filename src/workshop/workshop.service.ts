@@ -7,9 +7,11 @@ import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Workshop } from './entities/workshop.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Company } from '../company/entities/company.entity';
 import { User, UserRole } from '../users/entities/user.entity';
+import { whiteList } from '../common/const/whitelist.const';
+import { Task } from '../task/entities/task.entity';
 
 @Injectable()
 export class WorkshopService {
@@ -18,6 +20,8 @@ export class WorkshopService {
 		private readonly workshopRepository: Repository<Workshop>,
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
+		@InjectRepository(Task)
+		private readonly taskRepository: Repository<Task>,
 		private readonly dataSource: DataSource,
 	) {}
 
@@ -72,6 +76,7 @@ export class WorkshopService {
 	async findAll(userId: number, searchKey?: string, searchValue?: string) {
 		const user = await this.userRepository.findOne({
 			where: { id: userId },
+			relations: ['company'],
 		});
 		if (!user) {
 			throw new NotFoundException('User not found');
@@ -79,19 +84,17 @@ export class WorkshopService {
 
 		const qb = this.workshopRepository.createQueryBuilder('workshop');
 
-		qb.leftJoinAndSelect('workshop.company', 'company').andWhere(
-			'workshop.deletedAt IS NULL',
-		);
+		qb.where('workshop.deletedAt IS NULL');
 
 		if (searchKey && searchValue) {
-			const whiteList = [
-				'workshop.name',
-				'workshop.address',
-				'workshop.addressDetail',
-				'company.name',
+			const tempWhiteList = [
+				whiteList.workshopName,
+				whiteList.workshopAddress,
+				whiteList.workshopAddressDetail,
+				whiteList.companyName,
 			];
 
-			if (whiteList.includes(searchKey)) {
+			if (tempWhiteList.includes(searchKey)) {
 				qb.andWhere(`${searchKey} LIKE :value`, {
 					value: `%${searchValue}%`,
 				});
@@ -100,7 +103,7 @@ export class WorkshopService {
 			}
 		}
 		if (user.role !== UserRole.MASTER) {
-			qb.andWhere('users.companyId = :id', { id: user.companyId });
+			qb.andWhere('workshop.companyId = :id', { id: user.companyId });
 		}
 
 		const workshops = await qb.getMany();
@@ -109,19 +112,6 @@ export class WorkshopService {
 		}
 
 		return workshops;
-	}
-
-	async findForMaster() {
-		const workshop = await this.workshopRepository
-			.createQueryBuilder('workshop')
-			.leftJoinAndSelect('workshop.company', 'company')
-			.getMany();
-
-		if (!workshop) {
-			throw new NotFoundException('workshop not found');
-		}
-
-		return workshop;
 	}
 
 	async update(id: number, updateWorkshopDto: UpdateWorkshopDto) {
@@ -152,5 +142,27 @@ export class WorkshopService {
 		await this.workshopRepository.softRemove(workshop);
 
 		return id;
+	}
+
+	async updateTasks(workshopId: number, taskIds: number[]) {
+		const workshop = await this.workshopRepository.findOne({
+			where: { id: workshopId },
+			relations: ['tasks'],
+		});
+		if (!workshop) {
+			throw new NotFoundException('workshop not found');
+		}
+
+		const tasks = await this.taskRepository.findBy({
+			id: In(taskIds),
+		});
+
+		if (!tasks.length) {
+			throw new NotFoundException('tasks not found');
+		}
+
+		workshop.tasks = tasks;
+
+		return this.workshopRepository.save(workshop);
 	}
 }
