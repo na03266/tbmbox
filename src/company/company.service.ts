@@ -72,7 +72,6 @@ export class CompanyService {
 				whiteList.companyName,
 				whiteList.companyCode,
 				whiteList.companyAddress,
-				whiteList.companyAddressDetail,
 			];
 
 			if (tempWhiteList.includes(searchKey)) {

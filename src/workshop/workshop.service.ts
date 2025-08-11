@@ -90,7 +90,6 @@ export class WorkshopService {
 			const tempWhiteList = [
 				whiteList.workshopName,
 				whiteList.workshopAddress,
-				whiteList.workshopAddressDetail,
 				whiteList.companyName,
 			];
 
@@ -112,6 +111,17 @@ export class WorkshopService {
 		}
 
 		return workshops;
+	}
+
+	findOne(id: number) {
+		const workshop = this.workshopRepository.findOne({
+			where: { id },
+			relations: ['company', 'tasks', 'tbms'],
+		});
+		if (!workshop) {
+			throw new NotFoundException('workshop not found');
+		}
+		return workshop;
 	}
 
 	async update(id: number, updateWorkshopDto: UpdateWorkshopDto) {
@@ -165,4 +175,19 @@ export class WorkshopService {
 
 		return this.workshopRepository.save(workshop);
 	}
+
+	async removeMultiple(ids: number[]) {
+		const workshops = await this.workshopRepository.find({
+			where: { id: In(ids) },
+		});
+		if (workshops.length === 0) {
+			throw new NotFoundException('삭제할 작업장이 없습니다.');
+		}
+		if (workshops.length !== ids.length) {
+			throw new NotFoundException('일부 작업장을 찾을 수 없습니다.');
+		}
+		return this.workshopRepository.softRemove(await workshops);
+	}
+
+
 }

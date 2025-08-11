@@ -37,6 +37,11 @@ export class WorkshopController {
 		return this.workshopService.findAll(req.user.sub, searchKey, searchValue);
 	}
 
+	@Get(':id')
+	findOne(@Param('id') id: string) {
+		return this.workshopService.findOne(+id);
+	}
+
 	@Patch(':id')
 	update(
 		@Param('id') id: string,
@@ -52,6 +57,14 @@ export class WorkshopController {
 		taskIds: number[],
 	) {
 		return this.workshopService.updateTasks(id, taskIds);
+	}
+
+	@Delete('multiple')
+	removeMultiple(
+		@Body('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
+		ids: number[],
+	) {
+		return this.workshopService.removeMultiple(ids);
 	}
 
 	@Delete(':id')

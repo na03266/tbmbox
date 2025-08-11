@@ -5,7 +5,8 @@ import {
 	Delete,
 	Get,
 	Param,
-	ParseArrayPipe, ParseIntPipe,
+	ParseArrayPipe,
+	ParseIntPipe,
 	Patch,
 	Post,
 	Query,
@@ -30,6 +31,14 @@ export class TaskController {
 	findAll(@Request() req, @Query('name') name?: string) {
 		/// 관리자용, 하위 관리자용, 사용자용
 		return this.taskService.findAll(req, name);
+	}
+
+	@Get(':id/workshop')
+	findByWorkshop(
+		@Param('id', ParseIntPipe) id: number,
+		@Query('name') name?: string,
+	) {
+		return this.taskService.findByWorkshop(id, name);
 	}
 
 	@Get(':id')

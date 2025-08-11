@@ -123,4 +123,39 @@ export class TaskService {
 		await this.taskRepository.softRemove(tasks);
 		return tasks.map((task) => task.id); // 실제 삭제된 ID만 리턴
 	}
+
+	async findByWorkshop(workshopId: number, name?: string) {
+		// 워크샵 정보와 연관된 작업들 조회
+		const workshop = await this.workshopRepository.findOne({
+			where: { id: workshopId },
+			relations: ['tasks'],
+		});
+
+		if (!workshop) {
+			throw new NotFoundException('Workshop not found');
+		}
+
+		const assignedTaskIds = new Set(workshop.tasks.map((task) => task.id));
+
+		const qb = this.taskRepository.createQueryBuilder('task');
+
+		qb.where('task.deletedAt IS NULL');
+
+		qb.andWhere('task.companyId = :companyId', {
+			companyId: workshop.companyId,
+		});
+
+		if (name) {
+			qb.andWhere('task.title LIKE :title', { title: `%${name}%` });
+		}
+		const allTasks = await qb.getMany();
+
+		console.log(allTasks);
+
+		return allTasks.map((task) => ({
+			id: task.id,
+			title: task.title,
+			isActivated: assignedTaskIds.has(task.id),
+		}));
+	}
 }
