@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateToolDto {
 	@IsNotEmpty()
@@ -8,8 +8,4 @@ export class CreateToolDto {
 	@IsOptional()
 	@IsString()
 	manual: string;
-
-	@IsNotEmpty()
-	@IsNumber()
-	companyId: number;
 }

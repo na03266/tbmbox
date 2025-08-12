@@ -175,7 +175,7 @@ export class TaskService {
 		});
 
 		if (!tools.length) {
-			throw new NotFoundException('tasks not found');
+			throw new NotFoundException('tools not found');
 		}
 
 		task.tools = tools;

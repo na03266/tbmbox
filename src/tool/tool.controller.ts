@@ -1,12 +1,16 @@
 import {
-	Body, ClassSerializerInterceptor,
+	Body,
+	ClassSerializerInterceptor,
 	Controller,
 	Delete,
 	Get,
 	Param,
+	ParseArrayPipe,
 	Patch,
 	Post,
-	Request, UseInterceptors,
+	Query,
+	Request,
+	UseInterceptors,
 } from '@nestjs/common';
 import { ToolService } from './tool.service';
 import { CreateToolDto } from './dto/create-tool.dto';
@@ -18,12 +22,12 @@ export class ToolController {
 	constructor(private readonly toolService: ToolService) {}
 
 	@Post()
-	create(@Body() createToolDto: CreateToolDto) {
-		return this.toolService.create(createToolDto);
+	create(@Request() req: any, @Body() createToolDto: CreateToolDto) {
+		return this.toolService.create(req.user.companyId, createToolDto);
 	}
 
 	@Get()
-	findAll(@Request() req) {
+	findAll(@Request() req: any) {
 		return this.toolService.findAll(req);
 	}
 
@@ -32,9 +36,22 @@ export class ToolController {
 		return this.toolService.findOne(+id);
 	}
 
+	@Get(':taskId/task')
+	findByTask(@Param('taskId') taskId: string, @Query('name') name?: string) {
+		return this.toolService.findByTask(+taskId, name);
+	}
+
 	@Patch(':id')
 	update(@Param('id') id: string, @Body() updateToolDto: UpdateToolDto) {
 		return this.toolService.update(+id, updateToolDto);
+	}
+
+	@Delete('multiple')
+	removeMultiple(
+		@Body('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
+		ids: number[],
+	) {
+		return this.toolService.removeMultiple(ids);
 	}
 
 	@Delete(':id')

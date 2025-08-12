@@ -3,6 +3,7 @@ import {
 	Column,
 	Entity,
 	JoinColumn,
+	ManyToMany,
 	ManyToOne,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -26,7 +27,7 @@ export class Tool extends BaseTable {
 	@Column()
 	companyId: number;
 
-	@ManyToOne(() => Task, (task) => task.tools)
+	@ManyToMany(() => Task, (task) => task.tools)
 	tasks: Task[];
 
 	@ManyToOne(() => Company, (company) => company.tools)
