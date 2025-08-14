@@ -1,4 +1,4 @@
-import {IsBoolean, IsNotEmpty, IsNumber, IsString} from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateWorkshopDto {
     @IsNotEmpty()
@@ -9,9 +9,13 @@ export class CreateWorkshopDto {
     @IsString()
     address: string;
 
-    @IsNotEmpty()
+		@IsOptional()
+    @IsString()
+    addressDetail: string;
+
+    @IsOptional()
     @IsBoolean()
-    isCabinet: boolean = false;
+    isCabinet: boolean;
 
     @IsNotEmpty()
     @IsNumber()

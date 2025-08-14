@@ -37,6 +37,7 @@ export class CompanyService {
 					code: createCompanyDto.code,
 					address: createCompanyDto.address,
 					addressDetail: createCompanyDto.addressDetail,
+					isActivated: createCompanyDto.isActivated,
 				})
 				.execute();
 

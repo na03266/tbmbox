@@ -63,8 +63,10 @@ export class UsersService {
 					password: hash,
 					name: createUserByAdminDto.name,
 					role: createUserByAdminDto.role,
-					company,
-					workshop,
+					companyId: createUserByAdminDto.companyId,
+					workshopId: createUserByAdminDto.workshopId,
+					icCardNumber: createUserByAdminDto.icCardNumber,
+					isActivated: createUserByAdminDto.isActivated,
 				})
 				.execute();
 
@@ -74,7 +76,7 @@ export class UsersService {
 
 			return await qr.manager.findOne(User, {
 				where: {
-					phone: userPhone,
+					phone: createUserByAdminDto.phone,
 				},
 				relations: ['company', 'workshop'],
 			});

@@ -49,6 +49,7 @@ export class WorkshopService {
 				.values({
 					name: createWorkshopDto.name,
 					address: createWorkshopDto.address,
+					addressDetail: createWorkshopDto.addressDetail,
 					isCabinet: createWorkshopDto.isCabinet,
 					company,
 				})
@@ -188,6 +189,4 @@ export class WorkshopService {
 		}
 		return this.workshopRepository.softRemove(workshops);
 	}
-
-
 }

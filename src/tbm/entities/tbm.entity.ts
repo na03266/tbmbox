@@ -2,34 +2,42 @@ import {
 	Column,
 	Entity,
 	JoinColumn,
+	JoinTable,
+	ManyToMany,
 	ManyToOne,
 	PrimaryGeneratedColumn,
-	ManyToMany, JoinTable, // 추가
+	Unique,
 } from 'typeorm';
 import { Workshop } from '../../workshop/entities/workshop.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Task } from '../../task/entities/task.entity'; // 추가
 
+@Unique(['title', 'workshopId'])
 @Entity()
 export class Tbm extends BaseTable {
-  @PrimaryGeneratedColumn()
-  id: number;
+	@PrimaryGeneratedColumn()
+	id: number;
 
-  @Column()
-  name: string;
+	@Column()
+	title: string;
 
-  @Column()
-  content: string;
+	@Column({ type: 'text' })
+	content: string;
 
-  @Column()
-  workshopId: number;
+	@Column()
+	workshopId: number;
 
-  @ManyToOne(() => Workshop, (workshop) => workshop.tbms)
-  @JoinColumn({ name: 'workshopId' })
-  workshop: Workshop;
+	@Column({
+		nullable: true,
+	})
+	createBy: number;
 
-  // Task와의 다대다 관계 (역방향)
-  @ManyToMany(() => Task, (task) => task.tbms)
+	@ManyToOne(() => Workshop, (workshop) => workshop.tbms)
+	@JoinColumn({ name: 'workshopId' })
+	workshop: Workshop;
+
+	// Task와의 다대다 관계 (역방향)
+	@ManyToMany(() => Task, (task) => task.tbms)
 	@JoinTable()
-  tasks: Task[];
+	tasks: Task[];
 }

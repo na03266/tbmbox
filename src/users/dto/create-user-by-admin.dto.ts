@@ -9,9 +9,11 @@ import { UserRole } from '../entities/user.entity';
 import { Type } from 'class-transformer';
 
 export class CreateUserByAdminDto {
+	@IsNotEmpty()
 	@IsString()
 	phone: string;
 
+	@IsNotEmpty()
 	@IsString()
 	password: string;
 
