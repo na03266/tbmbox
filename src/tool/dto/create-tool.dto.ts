@@ -8,4 +8,8 @@ export class CreateToolDto {
 	@IsOptional()
 	@IsString()
 	manual: string;
+
+	@IsNotEmpty()
+	@IsOptional()
+	companyId: number;
 }

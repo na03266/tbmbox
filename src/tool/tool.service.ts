@@ -20,13 +20,16 @@ export class ToolService {
 		const tools = await this.toolRepository.find({
 			where: {
 				name: createToolDto.name,
-				companyId: companyId,
+				companyId: createToolDto.companyId ?? companyId,
 			},
 		});
 		if (tools.length > 0) {
 			throw new NotFoundException('장비 이름이 중복되었습니다.');
 		}
-		const tool = this.toolRepository.create({ ...createToolDto, companyId });
+		const tool = this.toolRepository.create({
+			...createToolDto,
+			companyId: createToolDto.companyId ?? companyId,
+		});
 
 		return await this.toolRepository.save(tool);
 	}
