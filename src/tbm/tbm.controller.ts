@@ -8,6 +8,7 @@ import {
 	ParseArrayPipe,
 	Patch,
 	Post,
+	Request,
 	Query,
 	UseInterceptors,
 } from '@nestjs/common';
@@ -21,8 +22,8 @@ export class TbmController {
 	constructor(private readonly tbmService: TbmService) {}
 
 	@Post()
-	create(@Body() createTbmDto: CreateTbmDto) {
-		return this.tbmService.create(createTbmDto);
+	create(@Request() req: any, @Body() createTbmDto: CreateTbmDto) {
+		return this.tbmService.create(req.user.sub, createTbmDto);
 	}
 
 	@Get()

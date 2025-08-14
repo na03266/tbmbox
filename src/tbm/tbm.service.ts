@@ -18,7 +18,7 @@ export class TbmService {
 		private readonly workshopRepository: Repository<Workshop>,
 	) {}
 
-	async create(createTbmDto: CreateTbmDto) {
+	async create(userId: number, createTbmDto: CreateTbmDto) {
 		const workshop = await this.workshopRepository.findOne({
 			where: { id: createTbmDto.workshopId },
 		});
@@ -30,6 +30,7 @@ export class TbmService {
 			title: createTbmDto.title,
 			content: createTbmDto.content,
 			workshopId: createTbmDto.workshopId,
+			createdBy: createTbmDto.createdBy ?? userId,
 		});
 
 		if (createTbmDto.taskIds && createTbmDto.taskIds.length) {
@@ -54,16 +55,16 @@ export class TbmService {
 		qb.where('tbm.deletedAt IS NULL');
 
 		if (taskIds?.length) {
-			qb.innerJoin('tbm.tasks', 'filterTask')            // ← 필터 전용 alias
+			qb.innerJoin('tbm.tasks', 'filterTask') // ← 필터 전용 alias
 				.andWhere('filterTask.id IN (:...taskIds)', { taskIds });
 		}
-		qb.distinct(true);                                   // 중복 TBM 제거
+		qb.distinct(true); // 중복 TBM 제거
 
-		 const tbms =await qb.getMany();
+		const tbms = await qb.getMany();
 		return tbms.map((tbm) => ({
 			id: tbm.id,
 			title: tbm.title,
-		}))
+		}));
 	}
 
 	async findOne(id: number) {

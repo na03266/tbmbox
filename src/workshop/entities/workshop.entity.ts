@@ -13,6 +13,7 @@ import { User } from '../../users/entities/user.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Task } from '../../task/entities/task.entity';
 import { Tbm } from '../../tbm/entities/tbm.entity';
+import { TbmLog } from '../../tbm-log/entities/tbm-log.entity';
 
 @Entity()
 export class Workshop extends BaseTable {
@@ -52,4 +53,7 @@ export class Workshop extends BaseTable {
 
 	@OneToMany(() => Tbm, (tbm) => tbm.workshop)
 	tbms: Tbm[];
+
+	@OneToMany(() => TbmLog, (logs) => logs.workshop)
+	tbmLogs: TbmLog[];
 }

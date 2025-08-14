@@ -30,13 +30,12 @@ export class Tbm extends BaseTable {
 	@Column({
 		nullable: true,
 	})
-	createBy: number;
+	createdBy: number;
 
 	@ManyToOne(() => Workshop, (workshop) => workshop.tbms)
 	@JoinColumn({ name: 'workshopId' })
 	workshop: Workshop;
 
-	// Task와의 다대다 관계 (역방향)
 	@ManyToMany(() => Task, (task) => task.tbms)
 	@JoinTable()
 	tasks: Task[];

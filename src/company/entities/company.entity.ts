@@ -4,6 +4,7 @@ import { User } from '../../users/entities/user.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Task } from '../../task/entities/task.entity';
 import { Tool } from '../../tool/entities/tool.entity';
+import { TbmLog } from '../../tbm-log/entities/tbm-log.entity';
 
 @Entity()
 export class Company extends BaseTable {
@@ -36,4 +37,7 @@ export class Company extends BaseTable {
 
 	@OneToMany(() => Tool, (tool) => tool.company)
 	tools: Tool[];
+
+	@OneToMany(() => TbmLog, (tbmLog) => tbmLog.company)
+	tbmLogs: TbmLog[];
 }

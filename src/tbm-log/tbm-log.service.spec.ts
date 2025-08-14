@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TbmSnapshotService } from './tbm-snapshot.service';
+import { TbmLogService } from './tbm-log.service';
 
-describe('TbmSnapshotService', () => {
-  let service: TbmSnapshotService;
+describe('TbmLogService', () => {
+  let service: TbmLogService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TbmSnapshotService],
+      providers: [TbmLogService],
     }).compile();
 
-    service = module.get<TbmSnapshotService>(TbmSnapshotService);
+    service = module.get<TbmLogService>(TbmLogService);
   });
 
   it('should be defined', () => {

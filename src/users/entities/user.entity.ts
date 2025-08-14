@@ -2,13 +2,16 @@ import {
 	Column,
 	Entity,
 	JoinColumn,
+	ManyToMany,
 	ManyToOne,
+	OneToMany,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Company } from '../../company/entities/company.entity';
 import { Workshop } from '../../workshop/entities/workshop.entity';
 import { Exclude } from 'class-transformer';
 import { BaseTable } from '../../common/entity/base-table.entity';
+import { TbmLog } from '../../tbm-log/entities/tbm-log.entity';
 
 export enum UserRole {
 	MASTER,
@@ -68,4 +71,7 @@ export class User extends BaseTable {
 	})
 	@JoinColumn({ name: 'workshopId' })
 	workshop: Workshop;
+
+	@ManyToMany(() => TbmLog, (tbmLog) => tbmLog.confirmUsers)
+	tbmLogs: TbmLog[];
 }

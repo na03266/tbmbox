@@ -21,6 +21,11 @@ export class CreateTbmDto {
 	workshopId: number;
 
 	@IsOptional()
+	@IsInt()
+	@Type(() => Number)
+	createdBy: number;
+
+	@IsOptional()
 	@IsArray()
 	@IsInt({ each: true })
 	taskIds?: number[];
