@@ -22,7 +22,7 @@ export class AuthController {
   }
 
   @Post('user/register')
-  // authorization : Basic
+  // authorization: Basic
   registerUser(
     @Headers('Authorization') token: string,
     @Body() body: CreateUserDto,

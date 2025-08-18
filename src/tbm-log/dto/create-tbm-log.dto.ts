@@ -1,21 +1,17 @@
 import { IsNotEmpty, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateTbmLogDto {
 	@IsNotEmpty()
+	@Type(() => Number)
 	tbmId: number;
 
-	@IsNotEmpty()
-	note: string;
-
-	@IsNotEmpty()
+	@IsOptional()
+	@Type(() => Number)
 	userId: number;
 
 	@IsOptional()
-	createdBy: number;
+	@IsNotEmpty()
+	note: string;
 
-	@IsOptional()
-	companyId: number;
-
-	@IsOptional()
-	workShopId: number;
 }

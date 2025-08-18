@@ -10,7 +10,8 @@ import {
 } from 'typeorm';
 import { Workshop } from '../../workshop/entities/workshop.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
-import { Task } from '../../task/entities/task.entity'; // 추가
+import { Task } from '../../task/entities/task.entity';
+import { Company } from '../../company/entities/company.entity'; // 추가
 
 @Unique(['title', 'workshopId'])
 @Entity()
@@ -35,6 +36,13 @@ export class Tbm extends BaseTable {
 	@ManyToOne(() => Workshop, (workshop) => workshop.tbms)
 	@JoinColumn({ name: 'workshopId' })
 	workshop: Workshop;
+
+	@Column()
+	companyId: number;
+
+	@ManyToOne(() => Company)
+	@JoinColumn({ name: 'companyId' })
+	company: Company;
 
 	@ManyToMany(() => Task, (task) => task.tbms)
 	@JoinTable()

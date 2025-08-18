@@ -1,7 +1,9 @@
 import {
 	Column,
+	CreateDateColumn,
 	Entity,
 	JoinColumn,
+	JoinTable,
 	ManyToMany,
 	ManyToOne,
 	PrimaryGeneratedColumn,
@@ -21,7 +23,7 @@ export class TbmLog {
 	@Column()
 	tbmId: number;
 
-	@ManyToOne(() => Tbm, { onDelete: 'CASCADE' })
+	@ManyToOne(() => Tbm)
 	@JoinColumn({ name: 'tbmId' })
 	tbm: Tbm;
 
@@ -55,6 +57,9 @@ export class TbmLog {
 	company: Company;
 
 	@ManyToMany(() => User, (user) => user.tbmLogs)
-	@JoinColumn()
+	@JoinTable()
 	confirmUsers: User[];
+
+	@CreateDateColumn()
+	createdAt: Date;
 }

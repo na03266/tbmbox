@@ -30,6 +30,7 @@ export class TbmService {
 			title: createTbmDto.title,
 			content: createTbmDto.content,
 			workshopId: createTbmDto.workshopId,
+			companyId: workshop.companyId,
 			createdBy: createTbmDto.createdBy ?? userId,
 		});
 
