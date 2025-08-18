@@ -33,7 +33,6 @@ export class TbmLogController {
 		@Query('searchKey') searchKey?: string,
 		@Query('searchValue') searchValue?: string,
 	) {
-
     return this.tbmLogService.findAll(req, startDate, endDate, searchKey, searchValue);
   }
 

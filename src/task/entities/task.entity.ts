@@ -1,10 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Workshop } from '../../workshop/entities/workshop.entity';
 import { Company } from '../../company/entities/company.entity';
 import { Tool } from '../../tool/entities/tool.entity';
 import { Tbm } from '../../tbm/entities/tbm.entity'; // 추가
 import { Exclude } from 'class-transformer';
+import { Checklist } from '../../checklist/entities/checklist.entity';
 
 @Entity()
 export class Task extends BaseTable {
@@ -38,4 +39,7 @@ export class Task extends BaseTable {
   // Tbm과의 다대다 관계 (조인 테이블 소유측)
   @ManyToMany(() => Tbm, (tbm) => tbm.tasks)
   tbms: Tbm[];
+
+	@OneToOne(() => Checklist, (checklist) => checklist.task)
+	checklist: Checklist;
 }
