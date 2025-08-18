@@ -1,6 +1,6 @@
 import {
 	Column,
-	CreateDateColumn,
+	CreateDateColumn, DeleteDateColumn,
 	Entity,
 	JoinColumn,
 	JoinTable,
@@ -39,6 +39,10 @@ export class TbmLog {
 	@Column()
 	createdBy: number;
 
+	@ManyToOne(() => User)
+	@JoinColumn({ name: 'createdBy' })
+	createdByUser: User;
+
 	@Column({ type: 'text', nullable: true })
 	note: string;
 
@@ -62,4 +66,7 @@ export class TbmLog {
 
 	@CreateDateColumn()
 	createdAt: Date;
+
+	@DeleteDateColumn()
+	deletedAt: Date;
 }
