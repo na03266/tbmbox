@@ -33,7 +33,7 @@ export class Checklist extends BaseTable {
 	task: Task;
 
 	@OneToMany(() => ChecklistChild, (child) => child.parent)
-	children: Checklist[];
+	children: ChecklistChild[];
 
 	@Column()
 	createdBy: number;

@@ -12,6 +12,12 @@ async function bootstrap() {
 			forbidNonWhitelisted: true,
 		}),
 	);
+	app.enableCors({
+		origin: true,
+		credentials: true, // 쿠키 쓸 거면 true
+		methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
+		allowedHeaders: ['Content-Type','Authorization','X-Requested-With'],
+	});
 
 	await app.listen(3000, '0.0.0.0');
 }
