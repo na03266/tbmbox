@@ -135,15 +135,20 @@ export class ChecklistService {
 				await this.checkListChildRepository.save(upserts);
 			}
 		}
-
-		// Return updated checklist with children
+		// Return updatedCheckList with children
 		return await this.checklistRepository.findOne({
 			where: { id: checklist.id },
 			relations: ['children'],
 		});
 	}
 
-	remove(id: number) {
-		return `This action removes a #${id} checklist`;
+	async remove(id: number) {
+		const checklist = await this.checklistRepository.findOne({ where: { id } });
+		if (!checklist) {
+			throw new BadRequestException('Checklist not found');
+		}
+
+		await this.checklistRepository.softDelete(id);
+		return id;
 	}
 }
