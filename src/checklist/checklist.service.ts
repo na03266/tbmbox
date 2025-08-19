@@ -100,24 +100,47 @@ export class ChecklistService {
 		if (!checklist) {
 			throw new BadRequestException('Checklist not found');
 		}
+
 		if (updateChecklistDto.note) {
 			checklist.note = updateChecklistDto.note;
 			await this.checklistRepository.save(checklist);
 		}
-		if(updateChecklistDto.children){
-			const children = this.checkListChildRepository.create(
+
+		// Upsert children and soft-delete removed ones
+		if (Array.isArray(updateChecklistDto.children)) {
+			const existingChildren = await this.checkListChildRepository.find({
+				where: { parentId: checklist.id },
+			});
+
+			const existingIds = new Set(existingChildren.map((c) => c.id));
+			const incomingIds = new Set(updateChecklistDto.children.map((c) => c.id));
+
+			const toDeleteIds: number[] = Array.from(existingIds).filter(
+				(id) => !incomingIds.has(id),
+			);
+
+			if (toDeleteIds.length > 0) {
+				await this.checkListChildRepository.delete(toDeleteIds);
+			}
+
+			// Upsert provided children (update existing or create new)
+			const upserts = this.checkListChildRepository.create(
 				updateChecklistDto.children.map((item) => ({
 					id: item.id,
 					content: item.content,
 					parentId: checklist.id,
 				})),
 			);
-			await this.checkListChildRepository.save(children);
+			if (upserts.length > 0) {
+				await this.checkListChildRepository.save(upserts);
+			}
 		}
 
-		const children = this.checkListChildRepository.create();
-
-		return `This action updates a #${id} checklist`;
+		// Return updated checklist with children
+		return await this.checklistRepository.findOne({
+			where: { id: checklist.id },
+			relations: ['children'],
+		});
 	}
 
 	remove(id: number) {
