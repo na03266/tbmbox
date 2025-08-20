@@ -13,7 +13,9 @@ export class RBACGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     // 만약에 public decorator를 쓰면
     // 모든 로직을 bypass
-    const role = this.reflector.get<UserRole>(RBAC, context.getHandler());
+		const methodRole = this.reflector.get<UserRole>(RBAC, context.getHandler());
+		const classRole = this.reflector.get<UserRole>(RBAC, context.getClass());
+		const role = methodRole ?? classRole; // 메서드 우선
 
     // Role Enum에 해당되는 값이 데코레이터에 들어갔는지 확인하기
 

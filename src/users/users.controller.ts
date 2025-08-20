@@ -16,8 +16,11 @@ import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { RBAC } from '../auth/decorator/rbac.decorator';
+import { UserRole } from './entities/user.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
+@RBAC(UserRole.ADMIN)
 @Controller('users')
 export class UsersController {
 	constructor(private readonly usersService: UsersService) {}
