@@ -127,21 +127,35 @@ export class TbmService {
 		return id;
 	}
 
-	async generateTbmContent(generateTbmDto: GenerateTbmDto) {
-		// let tbmPrompts = [];
-		// if (generateTbmDto.title) {
-		// 	tbmPrompts.push(`title: ${generateTbmDto.title}`);
-		// }
-		// if (generateTbmDto.content) {
-		// 	tbmPrompts.push(`content: ${generateTbmDto.content}`);
-		// }
-		//
-		// if (generateTbmDto.taskIds && generateTbmDto.taskIds.length) {
-		// 	const tasks = await this.taskRepository.findBy({
-		// 		id: In(generateTbmDto.taskIds),
-		// 	});
-		// }
+	async generateTbmContent(dto: GenerateTbmDto) {
+		const workshop = await this.workshopRepository.findOne({
+			where: { id: dto.workshopId },
+		});
 
-		// return await this.commonService.generateWithOllama(Parse.json(generateTbmDto) );
+		const tasks = await this.taskRepository.find({
+			where: {
+				id: In(dto.taskIds ?? []),
+			},
+		});
+		const prompt = `
+		아래 정보를 참고하여 TBM 교육 내용을 작성하라.
+		제목(참고 목적): ${dto.title}
+		본문(참고 목적): """${dto.content ?? ''}"""
+		진행되는 작업: ${tasks.map((task) => [task.title, task.description]).join(', ')}
+		작업 현장 정보: ${workshop?.name} ${workshop?.address}
+		`;
+		const system = [
+			'너는 산업안전 TBM 교안을 작성하는 편집자다.',
+			'반드시 유효한 HTML fragment만 출력한다.',
+			'설명문, 코드블록, 마크다운, JSON은 금지한다.',
+			'한국어로 간결하게 작성한다.',
+			'본문의 내용은 가능한 길게 작성한다.',
+			'본문의 내용은 TBM교육을 대체할 수 있어야 한다.',
+			'에디터의 꾸밈효과가 적용 가능하다.',
+			'에디터에 삽입할 수있는 형식이어야 한다.',
+			'본문만 반환한다.',
+			'HTML 외 텍스트는 금지한다.',
+		].join('\n');
+		return await this.commonService.generateWithOllama(prompt, system);
 	}
 }

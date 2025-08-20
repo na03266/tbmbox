@@ -29,9 +29,9 @@ export class TbmController {
 
 	@Post('generate')
 	generate(
-		@Body() generateTbmDto: GenerateTbmDto,
+		@Body() dto: GenerateTbmDto,
 	) {
-		return this.tbmService.generateTbmContent(generateTbmDto);
+		return this.tbmService.generateTbmContent(dto);
 	}
 
 	@Get()

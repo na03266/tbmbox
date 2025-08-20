@@ -6,9 +6,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CommonService {
-	constructor(
-		private readonly configService: ConfigService,
-	) {}
+	constructor(private readonly configService: ConfigService) {}
 
 	applyPagePaginationParamToQb<T extends ObjectLiteral>(
 		qb: SelectQueryBuilder<T>,
@@ -20,7 +18,7 @@ export class CommonService {
 		qb.skip(skip);
 	}
 
-	async generateWithOllama(prompt: string,options?: string, system?: string) {
+	async generateWithOllama(prompt: string, system?: string, options?: string) {
 		const baseUrl = this.configService.get<string>(envVariables.ollamaBaseUrl);
 		const model = this.configService.get<string>(envVariables.ollamaModel);
 
@@ -32,6 +30,7 @@ export class CommonService {
 		if (system) payload.system = system;
 		if (options) payload.options = options;
 
+		console.log(payload);
 		const res = await fetch(`${baseUrl}/api/generate`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -45,10 +44,8 @@ export class CommonService {
 			);
 		}
 
-		const data = (await res.json()) as {
-			response?: string;
-		};
+		const data = await res.json()
+		console.log(data)
 		return data.response;
 	}
-
 }

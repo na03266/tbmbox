@@ -12,6 +12,8 @@ import { Company } from '../company/entities/company.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { whiteList } from '../common/const/whitelist.const';
 import { Task } from '../task/entities/task.entity';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { CommonService } from '../common/common.service';
 
 @Injectable()
 export class WorkshopService {
@@ -23,6 +25,7 @@ export class WorkshopService {
 		@InjectRepository(Task)
 		private readonly taskRepository: Repository<Task>,
 		private readonly dataSource: DataSource,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(createWorkshopDto: CreateWorkshopDto) {
@@ -74,19 +77,15 @@ export class WorkshopService {
 	}
 
 	// 회사 하위 조건 목록만.
-	async findAll(userId: number, searchKey?: string, searchValue?: string) {
-		const user = await this.userRepository.findOne({
-			where: { id: userId },
-			relations: ['company'],
-		});
-		if (!user) {
-			throw new NotFoundException('User not found');
-		}
+	async findAll(req: any, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 
 		const qb = this.workshopRepository.createQueryBuilder('workshop');
 
 		qb.where('workshop.deletedAt IS NULL');
-
+		if (req.user.role !== UserRole.MASTER) {
+			qb.andWhere('workshop.companyId = :id', { id: req.user.companyId });
+		}
 		if (searchKey && searchValue) {
 			const tempWhiteList = [
 				whiteList.workshopName,
@@ -102,16 +101,28 @@ export class WorkshopService {
 				throw new BadRequestException('잘못된 검색 키입니다.');
 			}
 		}
-		if (user.role !== UserRole.MASTER) {
-			qb.andWhere('workshop.companyId = :id', { id: user.companyId });
-		}
+
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
 		const workshops = await qb.getMany();
+		const total = await qb.getCount();
+
 		if (!workshops.length) {
 			throw new NotFoundException('일치하는 정보가 없습니다.');
 		}
 
-		return workshops;
+		return {
+			data: workshops.map((e) => {
+				return {
+					id: e.id,
+					name: e.name,
+					address: e.address,
+					addressDetail: e.addressDetail,
+					isCabinet: e.isCabinet,
+				};
+			}),
+			total: total,
+		};
 	}
 
 	findOne(id: number) {

@@ -12,21 +12,17 @@ export class CreateTbmDto {
 	@IsString()
 	title: string;
 
-	@IsNotEmpty()
 	@IsString()
 	content: string;
 
 	@IsInt()
-	@Type(() => Number)
 	workshopId: number;
 
 	@IsOptional()
 	@IsInt()
-	@Type(() => Number)
 	createdBy: number;
 
 	@IsOptional()
 	@IsArray()
-	@IsInt({ each: true })
 	taskIds?: number[];
 }

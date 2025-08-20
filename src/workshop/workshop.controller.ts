@@ -16,6 +16,7 @@ import {
 import { WorkshopService } from './workshop.service';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('workshop')
@@ -30,10 +31,9 @@ export class WorkshopController {
 	@Get()
 	findAll(
 		@Request() req:any,
-		@Query('searchKey') searchKey?: string,
-		@Query('searchValue') searchValue?: string,
+		@Query() dto: PagePaginationDto,
 	) {
-		return this.workshopService.findAll(req.user.sub, searchKey, searchValue);
+		return this.workshopService.findAll(req, dto);
 	}
 
 	@Get(':id')
