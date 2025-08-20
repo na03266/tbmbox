@@ -55,7 +55,6 @@ export class AuthController {
 		};
 	}
 
-	// @Public()
 	@UseGuards(LocalAuthGuard)
 	@Post('login/passport')
 	async loginUserPassport(@Request() req: any) {
@@ -68,7 +67,6 @@ export class AuthController {
 	@UseGuards(JwtAuthGuard)
 	@Get('private')
 	async private(@Request() req: any) {
-
 		return this.authService.privateInfo(req);
 	}
 }

@@ -175,9 +175,10 @@ export class AuthService {
 
 	async privateInfo(req: any) {
 		const user = await this.userRepository.findOne({
-			where: { id: req.user.id },
+			where: { id: req.user.sub },
 			relations: ['company', 'workshop'],
 		});
+
 		if (!req.user) {
 			throw new UnauthorizedException('인증되지 않은 사용자입니다.');
 		}
