@@ -6,9 +6,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Workshop } from '../workshop/entities/workshop.entity';
 import { User } from '../users/entities/user.entity';
 import { Tool } from '../tool/entities/tool.entity';
+import { CommonModule } from '../common/common.module';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([Task, Workshop, User, Tool])],
+	imports: [
+		TypeOrmModule.forFeature([Task, Workshop, User, Tool]),
+		CommonModule,
+	],
 	controllers: [TaskController],
 	providers: [TaskService],
 })

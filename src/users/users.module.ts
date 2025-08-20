@@ -5,6 +5,7 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {Workshop} from "../workshop/entities/workshop.entity";
 import {Company} from "../company/entities/company.entity";
 import {User} from "./entities/user.entity";
+import { CommonModule } from '../common/common.module';
 
 @Module({
     imports: [
@@ -13,6 +14,7 @@ import {User} from "./entities/user.entity";
             Workshop,
             Company,
         ]),
+			CommonModule,
     ],
     controllers: [UsersController],
     providers: [UsersService],

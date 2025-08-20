@@ -15,6 +15,7 @@ import {
 import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('company')
@@ -28,11 +29,10 @@ export class CompanyController {
 
 	@Get()
 	findAll(
-		@Request() req,
-		@Query('searchKey') searchKey?: string,
-		@Query('searchValue') searchValue?: string,
+		@Request() req : any,
+		@Query()dto: PagePaginationDto,
 	) {
-		return this.companyService.findAll(req.user.id, searchKey, searchValue);
+		return this.companyService.findAll(req.user.id, dto);
 	}
 
 	@Get(':id')

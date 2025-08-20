@@ -4,14 +4,13 @@ import {
 	Delete,
 	Get,
 	Param,
-	Patch,
 	Post,
 	Query,
 	Request,
 } from '@nestjs/common';
 import { ChecklistLogService } from './checklist-log.service';
 import { CreateChecklistLogDto } from './dto/create-checklist-log.dto';
-import { UpdateChecklistLogDto } from './dto/update-checklist-log.dto';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @Controller('checklist-log')
 export class ChecklistLogController {
@@ -26,12 +25,8 @@ export class ChecklistLogController {
 	}
 
 	@Get()
-	findAll(
-		@Request() req: any,
-		@Query('searchKey') searchKey?: string,
-		@Query('searchValue') searchValue?: string,
-	) {
-		return this.checklistLogService.findAll(req, searchKey, searchValue);
+	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
+		return this.checklistLogService.findAll(req, dto);
 	}
 
 	@Get(':id')

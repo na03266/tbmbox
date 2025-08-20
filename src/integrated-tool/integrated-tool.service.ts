@@ -1,15 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { CreateIntegratedToolDto } from './dto/create-integrated-tool.dto';
 import { UpdateIntegratedToolDto } from './dto/update-integrated-tool.dto';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { IntegratedTool } from './entities/integrated-tool.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CommonService } from '../common/common.service';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @Injectable()
 export class IntegratedToolService {
 	constructor(
 		@InjectRepository(IntegratedTool)
 		private readonly integratedToolRepository: Repository<IntegratedTool>,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(createIntegratedToolDto: CreateIntegratedToolDto) {
@@ -31,13 +34,16 @@ export class IntegratedToolService {
 		});
 	}
 
-	async findAll() {
-		return await this.integratedToolRepository.find({
-			select:{
-				id: true,
-				name: true,
-			},
-		});
+	async findAll(dto: PagePaginationDto) {
+		const qb = this.integratedToolRepository
+			.createQueryBuilder('tool')
+			.where('tool.deletedAt IS NULL');
+
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
+
+		qb.orderBy('tool.createdAt', 'DESC');
+
+		return await qb.getMany();
 	}
 
 	async findOne(id: number) {

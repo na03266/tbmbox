@@ -117,7 +117,7 @@ export class AuthService {
 	async authenticate(phone: string, password: string) {
 		const user = await this.userRepository.findOne({
 			where: { phone },
-			relations: ['company'],
+			relations: ['company', 'workshop'],
 		});
 
 		if (!user) {
@@ -157,7 +157,7 @@ export class AuthService {
 			},
 			{
 				secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-				expiresIn: isRefreshToken ? '7d' : '24h',
+				expiresIn: isRefreshToken ? '7d' : '1h',
 			},
 		);
 	}
@@ -171,5 +171,16 @@ export class AuthService {
 			refreshToken: this.issueToken(user, true),
 			accessToken: this.issueToken(user, false),
 		};
+	}
+
+	async privateInfo(req: any) {
+		const user = await this.userRepository.findOne({
+			where: { id: req.user.id },
+			relations: ['company', 'workshop'],
+		});
+		if (!req.user) {
+			throw new UnauthorizedException('인증되지 않은 사용자입니다.');
+		}
+		return user;
 	}
 }

@@ -29,11 +29,10 @@ export class WorkshopController {
 
 	@Get()
 	findAll(
-		@Request() req,
+		@Request() req:any,
 		@Query('searchKey') searchKey?: string,
 		@Query('searchValue') searchValue?: string,
 	) {
-		console.log(req.user);
 		return this.workshopService.findAll(req.user.sub, searchKey, searchValue);
 	}
 

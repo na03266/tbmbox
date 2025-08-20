@@ -20,6 +20,9 @@ import { ToolModule } from './tool/tool.module';
 import { IntegratedToolModule } from './integrated-tool/integrated-tool.module';
 import { TbmLogModule } from './tbm-log/tbm-log.module';
 import { ChecklistLogModule } from './checklist-log/checklist-log.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth/guard/auth.guard';
+import { RBACGuard } from './auth/guard/rbac.guard';
 
 @Module({
 	imports: [
@@ -36,6 +39,8 @@ import { ChecklistLogModule } from './checklist-log/checklist-log.module';
 				HASH_ROUNDS: Joi.number().required(),
 				ACCESS_TOKEN_SECRET: Joi.string().required(),
 				REFRESH_TOKEN_SECRET: Joi.string().required(),
+				OLLAMA_BASE_URL: Joi.string().required(),
+				OLLAMA_MODEL: Joi.string().required(),
 			}),
 		}),
 		TypeOrmModule.forRootAsync({
@@ -63,6 +68,16 @@ import { ChecklistLogModule } from './checklist-log/checklist-log.module';
 		IntegratedToolModule,
 		TbmLogModule,
 		ChecklistLogModule,
+	],
+	providers: [
+		{
+			provide: APP_GUARD,
+			useClass: AuthGuard,
+		},
+		{
+			provide: APP_GUARD,
+			useClass: RBACGuard,
+		},
 	],
 })
 export class AppModule implements NestModule {

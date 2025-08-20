@@ -48,7 +48,6 @@ export class TbmLogService {
 				workShopId: tbm.workshopId,
 				confirmUsers: [user],
 			});
-			console.log('tlqkf');
 			return await this.tbmLogRepository.save(tbmLog);
 		}
 	}

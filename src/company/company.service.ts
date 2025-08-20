@@ -11,6 +11,8 @@ import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { whiteList } from '../common/const/whitelist.const';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { CommonService } from '../common/common.service';
 
 @Injectable()
 export class CompanyService {
@@ -20,6 +22,7 @@ export class CompanyService {
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
 		private readonly dataSource: DataSource,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(createCompanyDto: CreateCompanyDto) {
@@ -56,9 +59,11 @@ export class CompanyService {
 		}
 	}
 
-	async findAll(userId: number, searchKey?: string, searchValue?: string) {
+	async findAll(userId: number, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 		const user = await this.userRepository.findOne({
 			where: { id: userId },
+			relations: ['company'],
 		});
 		if (!user) {
 			throw new NotFoundException('User not found');
@@ -88,13 +93,20 @@ export class CompanyService {
 			qb.andWhere('users.companyId = :id', { id: user.companyId });
 		}
 
-		const company = await qb.getMany();
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
-		if (!company) {
+		const companies= await qb.getMany();
+		const total = await qb.getCount();
+
+
+		if (!companies) {
 			throw new NotFoundException('Company not found');
 		}
 
-		return company;
+		return {
+			data: companies,
+			total: total,
+		};
 	}
 
 	async findOne(id: number) {

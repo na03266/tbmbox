@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateChecklistLogDto } from './dto/create-checklist-log.dto';
-import { UpdateChecklistLogDto } from './dto/update-checklist-log.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Checklist } from '../checklist/entities/checklist.entity';
 import { Repository } from 'typeorm';
 import { ChecklistLog } from './entities/checklist-log.entity';
 import { ChecklistLogChild } from './entities/checklist-log-child.entity';
 import { UserRole } from '../users/entities/user.entity';
+import { CommonService } from '../common/common.service';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @Injectable()
 export class ChecklistLogService {
@@ -17,6 +18,7 @@ export class ChecklistLogService {
 		private readonly checklistLogRepository: Repository<ChecklistLog>,
 		@InjectRepository(ChecklistLogChild)
 		private readonly checklistLogChildRepository: Repository<ChecklistLogChild>,
+		private readonly commonService: CommonService,
 	) {}
 	async create(req: any, createChecklistLogDto: CreateChecklistLogDto) {
 		const checklist = await this.checklistRepository.findOne({
@@ -52,7 +54,8 @@ export class ChecklistLogService {
 		});
 	}
 
-	async findAll(req: any, searchKey?: string, searchValue?: string) {
+	async findAll(req: any, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 		const qb = this.checklistLogRepository.createQueryBuilder('log');
 
 		qb.leftJoin('log.user', 'user');
@@ -75,6 +78,7 @@ export class ChecklistLogService {
 			qb.andWhere(`${searchKey} LIKE :value`, { value: `%${searchValue}%` });
 		}
 
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
 		qb.orderBy('log.createdAt', 'DESC');
 
 		const logList = await qb.getMany();

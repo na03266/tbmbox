@@ -16,6 +16,7 @@ import {
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('task')
@@ -28,9 +29,9 @@ export class TaskController {
 	}
 
 	@Get()
-	findAll(@Request() req, @Query('name') name?: string) {
+	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
 		/// 관리자용, 하위 관리자용, 사용자용
-		return this.taskService.findAll(req, name);
+		return this.taskService.findAll(req, dto);
 	}
 
 	@Get(':id/workshop')

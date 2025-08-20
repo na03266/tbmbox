@@ -6,6 +6,9 @@ import { UpdateTbmDto } from './dto/update-tbm.dto';
 import { Tbm } from './entities/tbm.entity';
 import { Task } from '../task/entities/task.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { CommonService } from '../common/common.service';
+import { GenerateTbmDto } from './dto/generate-tbm.dto';
 
 @Injectable()
 export class TbmService {
@@ -16,6 +19,7 @@ export class TbmService {
 		private readonly taskRepository: Repository<Task>,
 		@InjectRepository(Workshop)
 		private readonly workshopRepository: Repository<Workshop>,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(userId: number, createTbmDto: CreateTbmDto) {
@@ -49,16 +53,17 @@ export class TbmService {
 		return this.tbmRepository.save(tbm);
 	}
 
-	async findAll(taskIds?: number[]) {
+	async findAll(req: any, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 		const qb = this.tbmRepository.createQueryBuilder('tbm');
 
 		qb.leftJoinAndSelect('tbm.tasks', 'task');
 		qb.where('tbm.deletedAt IS NULL');
-
-		if (taskIds?.length) {
-			qb.innerJoin('tbm.tasks', 'filterTask') // ← 필터 전용 alias
-				.andWhere('filterTask.id IN (:...taskIds)', { taskIds });
-		}
+		//
+		// if (taskIds?.length) {
+		// 	qb.innerJoin('tbm.tasks', 'filterTask') // ← 필터 전용 alias
+		// 		.andWhere('filterTask.id IN (:...taskIds)', { taskIds });
+		// }
 		qb.distinct(true); // 중복 TBM 제거
 
 		const tbms = await qb.getMany();
@@ -120,5 +125,23 @@ export class TbmService {
 		}
 		await this.tbmRepository.softRemove(tbm);
 		return id;
+	}
+
+	async generateTbmContent(generateTbmDto: GenerateTbmDto) {
+		// let tbmPrompts = [];
+		// if (generateTbmDto.title) {
+		// 	tbmPrompts.push(`title: ${generateTbmDto.title}`);
+		// }
+		// if (generateTbmDto.content) {
+		// 	tbmPrompts.push(`content: ${generateTbmDto.content}`);
+		// }
+		//
+		// if (generateTbmDto.taskIds && generateTbmDto.taskIds.length) {
+		// 	const tasks = await this.taskRepository.findBy({
+		// 		id: In(generateTbmDto.taskIds),
+		// 	});
+		// }
+
+		// return await this.commonService.generateWithOllama(Parse.json(generateTbmDto) );
 	}
 }

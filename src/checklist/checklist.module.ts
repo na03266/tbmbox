@@ -7,10 +7,12 @@ import { Task } from '../task/entities/task.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
 import { User } from '../users/entities/user.entity';
 import { ChecklistChild } from './entities/checklistchildren.entity';
+import { CommonModule } from '../common/common.module';
 
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([Checklist, ChecklistChild, Task, Workshop, User]),
+		CommonModule,
 	],
 	controllers: [ChecklistController],
 	providers: [ChecklistService],

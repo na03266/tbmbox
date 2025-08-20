@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserRole } from '../users/entities/user.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
 import { Tool } from '../tool/entities/tool.entity';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { CommonService } from '../common/common.service';
 
 @Injectable()
 export class TaskService {
@@ -18,6 +20,7 @@ export class TaskService {
 		@InjectRepository(Workshop)
 		private readonly workshopRepository: Repository<Workshop>,
 		private readonly dataSource: DataSource,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(createTaskDto: CreateTaskDto) {
@@ -52,7 +55,8 @@ export class TaskService {
 	}
 
 	/// pagination
-	findAll(req, name?: string) {
+	findAll(req: any, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 		const qb = this.taskRepository.createQueryBuilder('task');
 
 		qb.where('task.deletedAt IS NULL');
@@ -67,9 +71,13 @@ export class TaskService {
 			});
 		}
 
-		if (name) {
-			qb.andWhere('task.title LIKE :title', { title: `%${name}%` });
+		if (searchKey && searchValue) {
+			qb.andWhere(`task.${searchKey} LIKE :searchValue`, {
+				searchValue: `%${searchValue}%`,
+			});
 		}
+
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
 		return qb.getMany();
 	}
@@ -151,7 +159,6 @@ export class TaskService {
 		}
 		const allTasks = await qb.getMany();
 
-		console.log(allTasks);
 
 		return allTasks.map((task) => ({
 			id: task.id,

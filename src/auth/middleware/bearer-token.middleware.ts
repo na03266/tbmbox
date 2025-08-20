@@ -6,14 +6,10 @@ import {
 } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BearerTokenMiddleware implements NestMiddleware {
-	constructor(
-		private readonly jwtService: JwtService,
-		private readonly configService: ConfigService,
-	) {}
+	constructor(private readonly jwtService: JwtService) {}
 
 	use(req: Request, res: Response, next: NextFunction) {
 		const authHeader = req.headers.authorization;
@@ -23,10 +19,10 @@ export class BearerTokenMiddleware implements NestMiddleware {
 			return;
 		}
 
-		const token = this.validateBearerToken(authHeader);
-
 		try {
+			const token = this.validateBearerToken(authHeader);
 			const decodedPayload = this.jwtService.decode(token);
+
 			if (decodedPayload == 'refresh' && decodedPayload == 'access') {
 				throw new BadRequestException('토큰 포맷이 잘못되었습니다.');
 			}
@@ -42,8 +38,10 @@ export class BearerTokenMiddleware implements NestMiddleware {
 
 			next();
 		} catch (e) {
+			if (e.name === 'TokenExpiredError') {
+				throw new UnauthorizedException('토큰이 만료 되었습니다.');
+			}
 			next();
-			throw new UnauthorizedException('토큰 만료 되었습니다.');
 		}
 	}
 

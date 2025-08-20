@@ -14,6 +14,8 @@ import * as bcrypt from 'bcrypt';
 import { envVariables } from '../common/const/env.const';
 import { ConfigService } from '@nestjs/config';
 import { whiteList } from '../common/const/whitelist.const';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { CommonService } from '../common/common.service';
 
 @Injectable()
 export class UsersService {
@@ -26,6 +28,7 @@ export class UsersService {
 		private readonly workshopRepository: Repository<Workshop>,
 		private readonly configService: ConfigService,
 		private readonly dataSource: DataSource,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(createUserByAdminDto: CreateUserByAdminDto) {
@@ -130,14 +133,8 @@ export class UsersService {
 		return users;
 	}
 
-	async findAll(userId: number, searchKey?: string, searchValue?: string) {
-		const user = await this.userRepository.findOne({
-			where: { id: userId },
-		});
-
-		if (!user) {
-			throw new NotFoundException('User not found');
-		}
+	async findAll(req: any, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 
 		const qb = this.userRepository.createQueryBuilder('users');
 
@@ -145,6 +142,17 @@ export class UsersService {
 			.leftJoinAndSelect('users.workshop', 'workshop')
 			.where('users.deletedAt IS NULL');
 
+		if (req.user.role === UserRole.SUPERADMIN) {
+			qb.andWhere('users.companyId = :companyId', {
+				companyId: req.user.companyId,
+			});
+		} else if (req.user.role === UserRole.ADMIN) {
+			qb.andWhere('users.workshopId = :workshopId', {
+				workshopId: req.user.workshopId,
+			});
+		} else if (req.user.role === UserRole.USER) {
+			qb.andWhere('users.id = :id', { id: req.user.id });
+		}
 		if (searchKey && searchValue) {
 			const tempWhiteList = [
 				whiteList.userName,
@@ -161,10 +169,7 @@ export class UsersService {
 				throw new BadRequestException('잘못된 검색 키입니다.');
 			}
 		}
-
-		if (user.role !== UserRole.MASTER) {
-			qb.andWhere('users.companyId = :id', { id: user.companyId });
-		}
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
 		qb.orderBy('users.role', 'ASC')
 			.addOrderBy('users.name', 'ASC')
 			.addOrderBy('users.id', 'DESC');
@@ -179,10 +184,10 @@ export class UsersService {
 	}
 
 	async findOne(id: number) {
-		const user = await this.workshopRepository
+		const user = await this.userRepository
 			.createQueryBuilder('user')
-			.leftJoin('user.workshop', 'workshop')
-			.leftJoin('user.company', 'company')
+			.leftJoinAndSelect('user.workshop', 'workshop')
+			.leftJoinAndSelect('user.company', 'company')
 			.where('user.id = :id', { id })
 			.getOne();
 

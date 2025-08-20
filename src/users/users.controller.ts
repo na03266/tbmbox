@@ -15,7 +15,7 @@ import {
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
-import { UserRole } from './entities/user.entity';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
@@ -33,17 +33,8 @@ export class UsersController {
 	}
 
 	@Get()
-	findAll(
-		@Request() req,
-		@Query('searchKey') searchKey?: string,
-		@Query('searchValue') searchValue?: string,
-	) {
-		switch (req.user.role) {
-			case UserRole.USER:
-				return this.usersService.findOne(req.user.id);
-			default:
-				return this.usersService.findAll(req.user.id, searchKey, searchValue);
-		}
+	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
+		return this.usersService.findAll(req, dto);
 	}
 
 	@Get(':id')

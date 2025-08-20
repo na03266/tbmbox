@@ -14,6 +14,7 @@ import {
 import { ChecklistService } from './checklist.service';
 import { CreateChecklistDto } from './dto/create-checklist.dto';
 import { UpdateChecklistDto } from './dto/update-checklist.dto';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('checklist')
@@ -26,16 +27,8 @@ export class ChecklistController {
 	}
 
 	@Get()
-	findAll(
-		@Request() req: any,
-		@Query('searchKey') searchKey?: string,
-		@Query('searchValue') searchValue?: string,
-	) {
-		return this.checklistService.findAll(
-			req,
-			searchKey,
-			searchValue,
-		);
+	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
+		return this.checklistService.findAll(req, dto);
 	}
 
 	@Get(':id')

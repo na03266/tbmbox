@@ -82,8 +82,6 @@ export class ToolService {
 		}
 		const allTasks = await qb.getMany();
 
-		console.log(allTasks);
-
 		return allTasks.map((tool) => ({
 			id: tool.id,
 			name: tool.name,

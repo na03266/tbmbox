@@ -7,11 +7,13 @@ import {
 	Param,
 	Patch,
 	Post,
+	Query,
 	UseInterceptors,
 } from '@nestjs/common';
 import { IntegratedToolService } from './integrated-tool.service';
 import { CreateIntegratedToolDto } from './dto/create-integrated-tool.dto';
 import { UpdateIntegratedToolDto } from './dto/update-integrated-tool.dto';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('integrated-tool')
@@ -24,8 +26,8 @@ export class IntegratedToolController {
 	}
 
 	@Get()
-	findAll() {
-		return this.integratedToolService.findAll();
+	findAll(@Query() dto: PagePaginationDto) {
+		return this.integratedToolService.findAll(dto);
 	}
 
 	@Get(':id')

@@ -6,6 +6,8 @@ import { Checklist } from './entities/checklist.entity';
 import { Repository } from 'typeorm';
 import { ChecklistChild } from './entities/checklistchildren.entity';
 import { UserRole } from '../users/entities/user.entity';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { CommonService } from '../common/common.service';
 
 @Injectable()
 export class ChecklistService {
@@ -14,6 +16,7 @@ export class ChecklistService {
 		private readonly checklistRepository: Repository<Checklist>,
 		@InjectRepository(ChecklistChild)
 		private readonly checkListChildRepository: Repository<ChecklistChild>,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(req: any, createChecklistDto: CreateChecklistDto) {
@@ -54,7 +57,8 @@ export class ChecklistService {
 		});
 	}
 
-	async findAll(req: any, searchKey?: string, searchValue?: string) {
+	async findAll(req: any, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 		const qb = this.checklistRepository.createQueryBuilder('checklist');
 		qb.leftJoinAndSelect('checklist.children', 'children');
 		qb.leftJoinAndSelect('checklist.task', 'task');
@@ -70,6 +74,8 @@ export class ChecklistService {
 				value: `%${searchValue}%`,
 			});
 		}
+
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
 		const items = await qb.getMany();
 		return items.map((item) => {
