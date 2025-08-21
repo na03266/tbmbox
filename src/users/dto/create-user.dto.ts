@@ -15,7 +15,7 @@ export class CreateUserDto {
 	name: string;
 
 	@IsEnum(UserRole)
-	@Type(() => Number)
+	@IsOptional()
 	role: UserRole;
 
 	@IsNotEmpty()
@@ -33,6 +33,6 @@ export class CreateUserDto {
 	icCardNumber: string;
 
 	@IsBoolean()
-	@Type(() => Boolean)
+	@IsOptional()
 	isActivated: boolean;
 }

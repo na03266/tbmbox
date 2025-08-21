@@ -32,7 +32,7 @@ export class CompanyController {
 		@Request() req : any,
 		@Query()dto: PagePaginationDto,
 	) {
-		return this.companyService.findAll(req.user.id, dto);
+		return this.companyService.findAll(req, dto);
 	}
 
 	@Get(':id')

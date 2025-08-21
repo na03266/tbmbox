@@ -25,6 +25,10 @@ export class ToolController {
 	create(@Request() req: any, @Body() createToolDto: CreateToolDto) {
 		return this.toolService.create(req.user.companyId, createToolDto);
 	}
+	@Post('generate')
+	generate(@Body() dto: CreateToolDto) {
+		return this.toolService.generateToolManual(dto);
+	}
 
 	@Get()
 	findAll(@Request() req: any) {

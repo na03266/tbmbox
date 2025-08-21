@@ -54,7 +54,7 @@ export class WorkshopService {
 					address: createWorkshopDto.address,
 					addressDetail: createWorkshopDto.addressDetail,
 					isCabinet: createWorkshopDto.isCabinet,
-					company,
+					companyId: company.id,
 				})
 				.execute();
 

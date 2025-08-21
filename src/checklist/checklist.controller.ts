@@ -31,6 +31,11 @@ export class ChecklistController {
 		return this.checklistService.findAll(req, dto);
 	}
 
+	@Post('generate')
+	generate(@Body() dto: CreateChecklistDto) {
+		return this.checklistService.generateChecklistItems(dto);
+	}
+
 	@Get(':id')
 	findOne(@Param('id') id: string) {
 		return this.checklistService.findOne(+id);

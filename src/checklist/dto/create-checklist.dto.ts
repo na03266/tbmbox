@@ -18,7 +18,7 @@ export class CreateChecklistDto {
 	@IsString()
 	note: string;
 
-	@IsNotEmpty()
+	@IsOptional()
 	@IsArray()
 	children: CreateChecklistChildDto[];
 }

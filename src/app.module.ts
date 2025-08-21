@@ -23,6 +23,7 @@ import { ChecklistLogModule } from './checklist-log/checklist-log.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { RBACGuard } from './auth/guard/rbac.guard';
+import { DashModule } from './dash/dash.module';
 
 @Module({
 	imports: [
@@ -68,6 +69,7 @@ import { RBACGuard } from './auth/guard/rbac.guard';
 		IntegratedToolModule,
 		TbmLogModule,
 		ChecklistLogModule,
+		DashModule,
 	],
 	providers: [
 		{

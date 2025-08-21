@@ -141,7 +141,7 @@ export class TbmService {
 		아래 정보를 참고하여 TBM 교육 내용을 작성하라.
 		제목(참고 목적): ${dto.title}
 		본문(참고 목적): """${dto.content ?? ''}"""
-		진행되는 작업: ${tasks.map((task) => [task.title, task.description]).join(', ')}
+		진행되는 작업: ${tasks.map((task) => `(${task.title}, ${task.description})`).join(', ')}
 		작업 현장 정보: ${workshop?.name} ${workshop?.address}
 		`;
 		const system = [

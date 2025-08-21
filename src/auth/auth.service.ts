@@ -1,6 +1,7 @@
 import {
 	BadRequestException,
 	Injectable,
+	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { User, UserRole } from '../users/entities/user.entity';
@@ -11,12 +12,17 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { envVariables } from '../common/const/env.const';
+import { Company } from '../company/entities/company.entity';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
+
+		@InjectRepository(Company)
+		private readonly companyRepository: Repository<Company>,
+
 		private readonly configService: ConfigService,
 		private readonly jwtService: JwtService,
 	) {}
@@ -97,6 +103,23 @@ export class AuthService {
 			password,
 			this.configService.getOrThrow<number>(envVariables.hashRounds),
 		);
+
+		const company = await this.companyRepository.findOne({
+			where: { id: createUserDto.companyId },
+			relations: ['workshops'],
+		})
+		if (!company) {
+			throw new NotFoundException('회사를 찾을 수 없습니다.');
+		}
+
+		if (
+			createUserDto.workshopId &&
+			!company.workshops.some(
+				(workshop) => workshop.id === createUserDto.workshopId,
+			)
+		) {
+			throw new BadRequestException('작업장이 해당 회사에 속하지 않습니다.');
+		}
 
 		const newUser = this.userRepository.create({
 			phone,

@@ -99,7 +99,7 @@ export class UsersService {
 			throw new NotFoundException('User not found');
 		}
 
-		const password = 'a12345678';
+		const password = Math.random().toString(36).slice(2, 10);
 		const hash = await bcrypt.hash(
 			password,
 			this.configService.getOrThrow<number>(envVariables.hashRounds),
@@ -169,18 +169,21 @@ export class UsersService {
 				throw new BadRequestException('잘못된 검색 키입니다.');
 			}
 		}
+
 		this.commonService.applyPagePaginationParamToQb(qb, dto);
+
 		qb.orderBy('users.role', 'ASC')
 			.addOrderBy('users.name', 'ASC')
 			.addOrderBy('users.id', 'DESC');
 
 		const users = await qb.getMany();
+		const total = await qb.getCount();
 
 		if (!users.length) {
 			throw new NotFoundException('일치하는 정보가 없습니다.');
 		}
 
-		return users;
+		return { data: users, total: total };
 	}
 
 	async findOne(id: number) {
@@ -212,26 +215,32 @@ export class UsersService {
 				throw new NotFoundException('User not found');
 			}
 
-			if (updateUserDto.companyId) {
+			// Normalize incoming relation IDs: treat 0 as null (unassign)
+			const normalizedDto: any = { ...updateUserDto };
+			if (normalizedDto.companyId === 0) normalizedDto.companyId = null;
+			if (normalizedDto.workshopId === 0) normalizedDto.workshopId = null;
+
+			// Validate only when a non-null value is provided
+			if (normalizedDto.companyId !== undefined && normalizedDto.companyId !== null) {
 				const company = await qr.manager.findOne(Company, {
-					where: { id: updateUserDto.companyId },
+					where: { id: normalizedDto.companyId },
 				});
 				if (!company) {
 					throw new NotFoundException('Company not found');
 				}
 			}
 
-			if (updateUserDto.workshopId) {
+			if (normalizedDto.workshopId !== undefined && normalizedDto.workshopId !== null) {
 				const workshop = await qr.manager.findOne(Workshop, {
-					where: { id: updateUserDto.workshopId },
+					where: { id: normalizedDto.workshopId },
 				});
 				if (!workshop) {
 					throw new NotFoundException('Workshop not found');
 				}
 			}
 
-			const userUpdateFields = {
-				...updateUserDto,
+			const userUpdateFields: any = {
+				...normalizedDto,
 			};
 
 			await qr.manager

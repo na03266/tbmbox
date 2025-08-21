@@ -59,11 +59,10 @@ export class CompanyService {
 		}
 	}
 
-	async findAll(userId: number, dto: PagePaginationDto) {
+	async findAll(req: any, dto: PagePaginationDto) {
 		const { searchKey, searchValue } = dto;
 		const user = await this.userRepository.findOne({
-			where: { id: userId },
-			relations: ['company'],
+			where: { id: req.user.sub },
 		});
 		if (!user) {
 			throw new NotFoundException('User not found');
@@ -89,8 +88,8 @@ export class CompanyService {
 			}
 		}
 
-		if (user.role !== UserRole.MASTER) {
-			qb.andWhere('users.companyId = :id', { id: user.companyId });
+		if (req.user.role > UserRole.MASTER) {
+			qb.andWhere('company.id = :id', { id: req.user.companyId });
 		}
 
 		this.commonService.applyPagePaginationParamToQb(qb, dto);

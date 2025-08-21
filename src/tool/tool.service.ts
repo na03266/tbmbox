@@ -6,6 +6,8 @@ import { Tool } from './entities/tool.entity';
 import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from '../task/entities/task.entity';
+import { CommonService } from '../common/common.service';
+import { Company } from '../company/entities/company.entity';
 
 @Injectable()
 export class ToolService {
@@ -14,6 +16,9 @@ export class ToolService {
 		private readonly toolRepository: Repository<Tool>,
 		@InjectRepository(Task)
 		private readonly taskRepository: Repository<Task>,
+		@InjectRepository(Company)
+		private readonly companyRepository: Repository<Company>,
+		private readonly commonService: CommonService,
 	) {}
 
 	async create(companyId: number, createToolDto: CreateToolDto) {
@@ -126,5 +131,23 @@ export class ToolService {
 
 		await this.toolRepository.softRemove(tools);
 		return tools.map((tool) => tool.id); // 실제 삭제된 ID만 리턴
+	}
+
+	async generateToolManual(dto: CreateToolDto) {
+		const company = await this.companyRepository.findOne({
+			where: {},
+		});
+		const prompt = `
+		아래 정보를 참고하여 장비에 대한 메뉴얼을 작성하라.
+		내용: ${dto.manual} ,
+		사업장 정보: ${company?.name} ${company?.address} ,
+		`;
+		const system = [
+			'너는 안전보건 메뉴얼을 작성중인 안전보건 관리자다.',
+			'Html형식만 허용한다.',
+			'한국어로 간결하게 작성한다.',
+			'본문만 반환한다.',
+		].join('\n');
+		return await this.commonService.generateWithOllama(prompt, system);
 	}
 }

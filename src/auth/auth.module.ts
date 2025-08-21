@@ -6,10 +6,11 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {JwtModule} from '@nestjs/jwt';
 import {LocalStrategy} from "./strategy/local.strategy";
 import {JwtStrategy} from "./strategy/jwt.strategy";
+import { Company } from '../company/entities/company.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User,]),
+    TypeOrmModule.forFeature([User,Company]),
     JwtModule.register({}),
   ],
   controllers: [AuthController],
