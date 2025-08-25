@@ -56,7 +56,7 @@ export class TaskService {
 	}
 
 	/// pagination
-	findAll(req: any, dto: PagePaginationDto) {
+	async findAll(req: any, dto: PagePaginationDto) {
 		const { searchKey, searchValue } = dto;
 		const qb = this.taskRepository.createQueryBuilder('task');
 
@@ -73,14 +73,24 @@ export class TaskService {
 		}
 
 		if (searchKey && searchValue) {
-			qb.andWhere(`task.${searchKey} LIKE :searchValue`, {
+			qb.andWhere(`${searchKey} LIKE :searchValue`, {
 				searchValue: `%${searchValue}%`,
 			});
 		}
 
 		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
-		return qb.getMany();
+		const data = await qb.getMany();
+		const total = await qb.getCount();
+
+		return {
+			data: data.map((task) => ({
+				id: task.id,
+				title: task.title,
+				createdAt: task.createdAt.toLocaleString(),
+			})),
+			total
+		};
 	}
 
 	findOne(id: number) {
@@ -160,7 +170,6 @@ export class TaskService {
 		}
 		const allTasks = await qb.getMany();
 
-
 		return allTasks.map((task) => ({
 			id: task.id,
 			title: task.title,
@@ -222,5 +231,4 @@ export class TaskService {
 		].join('\n');
 		return await this.commonService.generateWithOllama(prompt, system);
 	}
-
 }

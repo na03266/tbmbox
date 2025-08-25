@@ -42,6 +42,7 @@ import { DashModule } from './dash/dash.module';
 				REFRESH_TOKEN_SECRET: Joi.string().required(),
 				OLLAMA_BASE_URL: Joi.string().required(),
 				OLLAMA_MODEL: Joi.string().required(),
+				UNIBOX_TOKEN_CODE: Joi.string().required(),
 			}),
 		}),
 		TypeOrmModule.forRootAsync({

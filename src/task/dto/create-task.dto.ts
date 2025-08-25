@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateTaskDto {
@@ -10,7 +10,7 @@ export class CreateTaskDto {
 	description: string;
 
 	@IsNumber()
-	@IsNotEmpty()
+	@IsOptional()
 	@Type(() => Number)
 	companyId: number;
 }

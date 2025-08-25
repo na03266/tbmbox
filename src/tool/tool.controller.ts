@@ -15,6 +15,7 @@ import {
 import { ToolService } from './tool.service';
 import { CreateToolDto } from './dto/create-tool.dto';
 import { UpdateToolDto } from './dto/update-tool.dto';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tool')
@@ -26,13 +27,14 @@ export class ToolController {
 		return this.toolService.create(req.user.companyId, createToolDto);
 	}
 	@Post('generate')
-	generate(@Body() dto: CreateToolDto) {
-		return this.toolService.generateToolManual(dto);
+	generate(@Body() dto: CreateToolDto,
+					 @Request() req: any,) {
+		return this.toolService.generateToolManual(req, dto);
 	}
 
 	@Get()
-	findAll(@Request() req: any) {
-		return this.toolService.findAll(req);
+	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
+		return this.toolService.findAll(req, dto);
 	}
 
 	@Get(':id')

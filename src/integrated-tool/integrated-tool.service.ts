@@ -35,15 +35,30 @@ export class IntegratedToolService {
 	}
 
 	async findAll(dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
 		const qb = this.integratedToolRepository
 			.createQueryBuilder('tool')
 			.where('tool.deletedAt IS NULL');
 
+		if (searchKey && searchValue) {
+			qb.andWhere(`${searchKey} LIKE :searchValue`, {
+				searchValue: `%${searchValue}%`,
+			});
+		}
 		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
 		qb.orderBy('tool.createdAt', 'DESC');
 
-		return await qb.getMany();
+		const tools = await qb.getMany();
+		const total = await qb.getCount();
+		return {
+			data: tools.map((tool) => ({
+				id: tool.id,
+				name: tool.name,
+				createdAt: tool.createdAt.toLocaleString(),
+			})),
+			total,
+		};
 	}
 
 	async findOne(id: number) {

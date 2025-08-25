@@ -10,6 +10,7 @@ const accessTokenSecret = 'ACCESS_TOKEN_SECRET';
 const refreshTokenSecret = 'REFRESH_TOKEN_SECRET';
 const ollamaBaseUrl = 'OLLAMA_BASE_URL';
 const ollamaModel = 'OLLAMA_MODEL';
+const uniboxTokenCode = 'UNIBOX_TOKEN_CODE';
 
 export const envVariables = {
 	env,
@@ -23,5 +24,6 @@ export const envVariables = {
 	accessTokenSecret,
 	refreshTokenSecret,
 	ollamaBaseUrl,
-	ollamaModel
+	ollamaModel,
+	uniboxTokenCode,
 };

@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from '../task/entities/task.entity';
 import { CommonService } from '../common/common.service';
 import { Company } from '../company/entities/company.entity';
+import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @Injectable()
 export class ToolService {
@@ -39,7 +40,9 @@ export class ToolService {
 		return await this.toolRepository.save(tool);
 	}
 
-	async findAll(req: any) {
+	async findAll(req: any, dto: PagePaginationDto) {
+		const { searchKey, searchValue } = dto;
+
 		const qb = this.toolRepository
 			.createQueryBuilder('tool')
 			.where('tool.deletedAt IS NULL');
@@ -48,7 +51,28 @@ export class ToolService {
 			qb.andWhere('tool.companyId = :id', { id: req.user.companyId });
 		}
 
-		return await qb.getMany();
+		if (searchKey && searchValue) {
+			qb.andWhere(`${searchKey} LIKE :searchValue`, {
+				searchValue: `%${searchValue}%`,
+			});
+		}
+
+		this.commonService.applyPagePaginationParamToQb(qb, dto);
+
+		const tools = await qb.getMany();
+		const total = await qb.getCount();
+
+		return {
+			data: tools.map((tool) => {
+				return {
+					id: tool.id,
+					name: tool.name,
+					isManual: !!tool.manual,
+					createdAt: this.formatCreatedAt(tool.createdAt),
+				};
+			}),
+			total,
+		};
 	}
 
 	async findOne(id: number) {
@@ -133,12 +157,13 @@ export class ToolService {
 		return tools.map((tool) => tool.id); // 실제 삭제된 ID만 리턴
 	}
 
-	async generateToolManual(dto: CreateToolDto) {
+	async generateToolManual(req: any, dto: CreateToolDto) {
 		const company = await this.companyRepository.findOne({
-			where: {},
+			where: { id: req.user.companyId },
 		});
 		const prompt = `
 		아래 정보를 참고하여 장비에 대한 메뉴얼을 작성하라.
+		장비명 : ${dto.name} ,
 		내용: ${dto.manual} ,
 		사업장 정보: ${company?.name} ${company?.address} ,
 		`;
@@ -149,5 +174,16 @@ export class ToolService {
 			'본문만 반환한다.',
 		].join('\n');
 		return await this.commonService.generateWithOllama(prompt, system);
+	}
+
+	private formatCreatedAt(date: Date): string {
+		return date.toLocaleString('ko-KR', {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+		});
 	}
 }

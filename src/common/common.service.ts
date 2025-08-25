@@ -30,7 +30,6 @@ export class CommonService {
 		if (system) payload.system = system;
 		if (options) payload.options = options;
 
-		console.log(payload);
 		const res = await fetch(`${baseUrl}/api/generate`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -45,7 +44,6 @@ export class CommonService {
 		}
 
 		const data = await res.json()
-		console.log(data)
 		return data.response;
 	}
 }

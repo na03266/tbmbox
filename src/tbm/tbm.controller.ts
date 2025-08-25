@@ -24,7 +24,8 @@ export class TbmController {
 
 	@Post()
 	create(@Request() req: any, @Body() createTbmDto: CreateTbmDto) {
-		return this.tbmService.create(req.user.sub, createTbmDto);
+		console.log(req.user.sub);
+		return this.tbmService.create(req, createTbmDto);
 	}
 
 	@Post('generate')

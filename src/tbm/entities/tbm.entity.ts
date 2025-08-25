@@ -11,7 +11,8 @@ import {
 import { Workshop } from '../../workshop/entities/workshop.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Task } from '../../task/entities/task.entity';
-import { Company } from '../../company/entities/company.entity'; // 추가
+import { Company } from '../../company/entities/company.entity';
+import { User } from '../../users/entities/user.entity'; // 추가
 
 @Unique(['title', 'workshopId'])
 @Entity()
@@ -32,6 +33,10 @@ export class Tbm extends BaseTable {
 		nullable: true,
 	})
 	createdBy: number;
+
+	@ManyToOne(() => User)
+	@JoinColumn({ name: 'createdBy' })
+	creator: User;
 
 	@ManyToOne(() => Workshop, (workshop) => workshop.tbms)
 	@JoinColumn({ name: 'workshopId' })

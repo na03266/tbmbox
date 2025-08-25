@@ -27,6 +27,10 @@ export class TaskController {
 	create(@Body() createTaskDto: CreateTaskDto) {
 		return this.taskService.create(createTaskDto);
 	}
+	@Post('generate')
+	generate(@Body() dto: CreateTaskDto) {
+		return this.taskService.generateChecklistItems(dto);
+	}
 
 	@Get()
 	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {

@@ -22,7 +22,7 @@ export class TbmService {
 		private readonly commonService: CommonService,
 	) {}
 
-	async create(userId: number, createTbmDto: CreateTbmDto) {
+	async create(req: any, createTbmDto: CreateTbmDto) {
 		const workshop = await this.workshopRepository.findOne({
 			where: { id: createTbmDto.workshopId },
 		});
@@ -35,7 +35,7 @@ export class TbmService {
 			content: createTbmDto.content,
 			workshopId: createTbmDto.workshopId,
 			companyId: workshop.companyId,
-			createdBy: createTbmDto.createdBy ?? userId,
+			createdBy: req.user.sub,
 		});
 
 		if (createTbmDto.taskIds && createTbmDto.taskIds.length) {
@@ -58,6 +58,8 @@ export class TbmService {
 		const qb = this.tbmRepository.createQueryBuilder('tbm');
 
 		qb.leftJoinAndSelect('tbm.tasks', 'task');
+		qb.leftJoinAndSelect('tbm.workshop', 'workshop');
+		qb.leftJoinAndSelect('tbm.creator', 'creator');
 		qb.where('tbm.deletedAt IS NULL');
 		//
 		// if (taskIds?.length) {
@@ -65,12 +67,25 @@ export class TbmService {
 		// 		.andWhere('filterTask.id IN (:...taskIds)', { taskIds });
 		// }
 		qb.distinct(true); // 중복 TBM 제거
+		if (searchKey && searchValue) {
+			qb.andWhere(`${searchKey} LIKE :searchValue`, {
+				searchValue: `%${searchValue}%`,
+			});
+		}
 
-		const tbms = await qb.getMany();
-		return tbms.map((tbm) => ({
-			id: tbm.id,
-			title: tbm.title,
-		}));
+		const data = await qb.getMany();
+		const total = await qb.getCount();
+
+		return {
+			data: data.map((tbm) => ({
+				id: tbm.id,
+				title: tbm.title,
+				createdBy: tbm.creator?.name,
+				createdAt: tbm.createdAt.toLocaleString(),
+				workshop: tbm.workshop,
+			})),
+			total: total,
+		};
 	}
 
 	async findOne(id: number) {
@@ -156,6 +171,7 @@ export class TbmService {
 			'본문만 반환한다.',
 			'HTML 외 텍스트는 금지한다.',
 		].join('\n');
+
 		return await this.commonService.generateWithOllama(prompt, system);
 	}
 }
