@@ -22,7 +22,8 @@ export class TaskService {
 		private readonly workshopRepository: Repository<Workshop>,
 		private readonly dataSource: DataSource,
 		private readonly commonService: CommonService,
-	) {}
+	) {
+	}
 
 	async create(createTaskDto: CreateTaskDto) {
 		const qr = this.dataSource.createQueryRunner();
@@ -89,12 +90,15 @@ export class TaskService {
 				title: task.title,
 				createdAt: task.createdAt.toLocaleString(),
 			})),
-			total
+			total,
 		};
 	}
 
 	findOne(id: number) {
-		const task = this.taskRepository.findOne({ where: { id } });
+		const task = this.taskRepository.createQueryBuilder('task')
+			.leftJoinAndSelect('task.checklist', 'checklist')
+			.where('task.id = :id', { id })
+			.getOne();
 
 		if (!task) {
 			throw new NotFoundException('Task not found');

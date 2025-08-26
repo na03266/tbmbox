@@ -1,15 +1,10 @@
-import {
-	BadRequestException,
-	ConflictException,
-	Injectable,
-	NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { Company } from './entities/company.entity';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User, UserRole } from '../users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { whiteList } from '../common/const/whitelist.const';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 import { CommonService } from '../common/common.service';
@@ -23,7 +18,8 @@ export class CompanyService {
 		private readonly userRepository: Repository<User>,
 		private readonly dataSource: DataSource,
 		private readonly commonService: CommonService,
-	) {}
+	) {
+	}
 
 	async create(createCompanyDto: CreateCompanyDto) {
 		const qr = this.dataSource.createQueryRunner();
@@ -61,16 +57,14 @@ export class CompanyService {
 
 	async findAll(req: any, dto: PagePaginationDto) {
 		const { searchKey, searchValue } = dto;
-		const user = await this.userRepository.findOne({
-			where: { id: req.user.sub },
-		});
-		if (!user) {
-			throw new NotFoundException('User not found');
-		}
 
 		const qb = this.companyRepository.createQueryBuilder('company');
 
 		qb.where('company.deletedAt IS NULL');
+
+		// if (req.user.role == undefined || req.user.role >= UserRole.User) {
+		// 	qb.andWhere('company.isActivated = :isActivated', { isActivated: true });
+		// }
 
 		if (searchKey && searchValue) {
 			const tempWhiteList = [
@@ -88,13 +82,9 @@ export class CompanyService {
 			}
 		}
 
-		if (req.user.role > UserRole.MASTER) {
-			qb.andWhere('company.id = :id', { id: req.user.companyId });
-		}
-
 		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
-		const companies= await qb.getMany();
+		const companies = await qb.getMany();
 		const total = await qb.getCount();
 
 

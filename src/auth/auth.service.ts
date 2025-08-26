@@ -146,7 +146,7 @@ export class AuthService {
 		if (!user) {
 			throw new BadRequestException('잘못된 로그인 정보입니다.');
 		}
-		const passOk = await bcrypt.compare(password, user.password);
+		const passOk = bcrypt.compare(password, user.password);
 
 		if (!passOk) {
 			throw new BadRequestException('잘못된 로그인 정보입니다.');

@@ -1,20 +1,10 @@
-import {
-	Column,
-	Entity,
-	JoinColumn,
-	ManyToOne,
-	OneToMany,
-	OneToOne,
-	PrimaryGeneratedColumn,
-	Unique,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ChecklistChild } from './checklistchildren.entity';
 import { Task } from '../../task/entities/task.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { User } from '../../users/entities/user.entity';
 import { Company } from '../../company/entities/company.entity';
 
-@Unique(['taskId'])
 @Entity()
 export class Checklist extends BaseTable {
 	@PrimaryGeneratedColumn()
@@ -28,7 +18,7 @@ export class Checklist extends BaseTable {
 	})
 	note: string;
 
-	@OneToOne(() => Task, (task) => task.checklist)
+	@ManyToOne(() => Task, (task) => task.checklist)
 	@JoinColumn({ name: 'taskId' })
 	task: Task;
 

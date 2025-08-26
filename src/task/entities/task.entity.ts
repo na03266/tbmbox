@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import {
+	Column,
+	Entity,
+	JoinColumn,
+	JoinTable,
+	ManyToMany,
+	ManyToOne,
+	OneToOne,
+	PrimaryGeneratedColumn,
+} from 'typeorm';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Workshop } from '../../workshop/entities/workshop.entity';
 import { Company } from '../../company/entities/company.entity';
@@ -9,36 +18,37 @@ import { Checklist } from '../../checklist/entities/checklist.entity';
 
 @Entity()
 export class Task extends BaseTable {
-  @PrimaryGeneratedColumn()
-  id: number;
+	@PrimaryGeneratedColumn()
+	id: number;
 
-  @Column()
-  title: string;
+	@Column()
+	title: string;
 
-  @Column({
-    nullable: true,
-    type: 'text',
-  })
-  description: string;
+	@Column({
+		nullable: true,
+		type: 'text',
+	})
+	description: string;
 
-  @ManyToMany(() => Workshop, (workshop) => workshop.tasks)
-  workshops: Workshop[];
+	@ManyToMany(() => Workshop, (workshop) => workshop.tasks)
+	workshops: Workshop[];
 
-  @Column()
-  @Exclude()
-  companyId: number;
+	@Column()
+	@Exclude()
+	companyId: number;
 
-  @ManyToOne(() => Company, (company) => company.tasks)
-  @JoinColumn({ name: 'companyId' })
-  company: Company;
+	@ManyToOne(() => Company, (company) => company.tasks)
+	@JoinColumn({ name: 'companyId' })
+	company: Company;
 
-  @ManyToMany(() => Tool, (tool) => tool.tasks)
-  @JoinTable()
-  tools: Tool[];
+	@ManyToMany(() => Tool, (tool) => tool.tasks)
+	@JoinTable()
+	tools: Tool[];
 
-  // Tbm과의 다대다 관계 (조인 테이블 소유측)
-  @ManyToMany(() => Tbm, (tbm) => tbm.tasks)
-  tbms: Tbm[];
+	// Tbm과의 다대다 관계 (조인 테이블 소유측)
+	@ManyToMany(() => Tbm, (tbm) => tbm.tasks)
+	tbms: Tbm[];
+
 
 	@OneToOne(() => Checklist, (checklist) => checklist.task)
 	checklist: Checklist;

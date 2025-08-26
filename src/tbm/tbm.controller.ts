@@ -5,6 +5,7 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseArrayPipe,
 	Patch,
 	Post,
 	Query,
@@ -50,8 +51,17 @@ export class TbmController {
 		return this.tbmService.update(+id, updateTbmDto);
 	}
 
+	@Delete('multiple')
+	removeMultiple(
+		@Body('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
+		ids: number[],
+	){
+		return this.tbmService.removeMultiple(ids);
+
+	}
 	@Delete(':id')
 	remove(@Param('id') id: string) {
 		return this.tbmService.remove(+id);
 	}
+
 }

@@ -20,7 +20,8 @@ export class ChecklistService {
 		@InjectRepository(Task)
 		private readonly taskRepository: Repository<Task>,
 		private readonly commonService: CommonService,
-	) {}
+	) {
+	}
 
 	async create(req: any, createChecklistDto: CreateChecklistDto) {
 		const checklist = await this.checklistRepository.findOne({
@@ -32,7 +33,6 @@ export class ChecklistService {
 		if (checklist) {
 			throw new BadRequestException('Checklist already exists for this task');
 		}
-
 		const newChecklist = this.checklistRepository.create({
 			taskId: createChecklistDto.taskId,
 			note: createChecklistDto.note,
@@ -64,6 +64,7 @@ export class ChecklistService {
 		const qb = this.checklistRepository.createQueryBuilder('checklist');
 		qb.leftJoinAndSelect('checklist.children', 'children');
 		qb.leftJoinAndSelect('checklist.task', 'task');
+		qb.leftJoinAndSelect('checklist.createUserInfo', 'user');
 		qb.where('checklist.deletedAt IS NULL');
 
 		if (req.user.role <= UserRole.SUPERADMIN) {
@@ -77,15 +78,47 @@ export class ChecklistService {
 			});
 		}
 
+
 		this.commonService.applyPagePaginationParamToQb(qb, dto);
 
 		const items = await qb.getMany();
-		return items.map((item) => {
+		const total = await qb.getCount();
+
+		return {
+			data: items.map((item) => {
+				return {
+					id: item.id,
+					taskName: item.task?.title,
+					createdBy: item.createUserInfo.name,
+					createdAt: item.createdAt.toLocaleString(),
+				};
+			}),
+			total: total,
+		};
+	}
+
+	async findForTask(req: any, ) {
+		const qb = this.taskRepository.createQueryBuilder('task');
+		qb.leftJoin('task.checklist', 'checklist');
+		qb.where('task.deletedAt IS NULL');
+		qb.andWhere('checklist.id IS NULL');
+
+		// 체크리스트에서
+		// 작업을 불러올때 이미 있는 체크리스트가 등록된 작업이면 목록에서 제외
+		if (req.user.role >= UserRole.SUPERADMIN) {
+			qb.andWhere('task.companyId = :companyId', {
+				companyId: req.user.companyId,
+			});
+		}
+
+		qb.orderBy('task.title', 'DESC');
+
+		const tasks = await qb.getMany();
+
+		return tasks.map((task) => {
 			return {
-				id: item.id,
-				taskName: item.task.title,
-				createdBy: item.createdBy,
-				createdAt: item.createdAt,
+				id: task.id,
+				title: task.title,
 			};
 		});
 	}
@@ -93,7 +126,7 @@ export class ChecklistService {
 	async findOne(id: number) {
 		const checklist = await this.checklistRepository.findOne({
 			where: { id },
-			relations: ['children'],
+			relations: ['children','task'],
 		});
 		if (!checklist) {
 			throw new BadRequestException('Checklist not found');

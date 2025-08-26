@@ -29,6 +29,7 @@ export class TaskController {
 	}
 	@Post('generate')
 	generate(@Body() dto: CreateTaskDto) {
+		console.log(' 요청 ');
 		return this.taskService.generateChecklistItems(dto);
 	}
 

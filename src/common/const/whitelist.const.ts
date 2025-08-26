@@ -1,6 +1,7 @@
 const workshopName = 'workshop.name';
 const workshopAddress = 'workshop.address';
 
+const companyId = 'company.id';
 const companyName = 'company.name';
 const companyCode = 'company.code';
 const companyAddress = 'company.address';
@@ -11,9 +12,11 @@ const userPhone = 'users.phone';
 export const whiteList = {
 	workshopName,
 	workshopAddress,
-	companyName,
+	companyId,
+  companyName,
 	companyCode,
 	companyAddress,
 	userName,
 	userPhone,
+
 };

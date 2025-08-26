@@ -9,6 +9,7 @@ import { Workshop } from '../workshop/entities/workshop.entity';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 import { CommonService } from '../common/common.service';
 import { GenerateTbmDto } from './dto/generate-tbm.dto';
+import { UserRole } from '../users/entities/user.entity';
 
 @Injectable()
 export class TbmService {
@@ -61,11 +62,13 @@ export class TbmService {
 		qb.leftJoinAndSelect('tbm.workshop', 'workshop');
 		qb.leftJoinAndSelect('tbm.creator', 'creator');
 		qb.where('tbm.deletedAt IS NULL');
-		//
-		// if (taskIds?.length) {
-		// 	qb.innerJoin('tbm.tasks', 'filterTask') // ← 필터 전용 alias
-		// 		.andWhere('filterTask.id IN (:...taskIds)', { taskIds });
-		// }
+
+		if (req.user.role !== UserRole.ADMIN) {
+			qb.andWhere('tbm.companyId = :companyId', {
+				companyId: req.user.companyId,
+			});
+		}
+
 		qb.distinct(true); // 중복 TBM 제거
 		if (searchKey && searchValue) {
 			qb.andWhere(`${searchKey} LIKE :searchValue`, {
@@ -173,5 +176,22 @@ export class TbmService {
 		].join('\n');
 
 		return await this.commonService.generateWithOllama(prompt, system);
+	}
+
+	async removeMultiple(ids: number[]) {
+		const tbms = await this.tbmRepository.find({
+			where: { id: In(ids) },
+		});
+
+		if (tbms.length === 0) {
+			throw new NotFoundException('삭제할 작업이 없습니다.');
+		}
+
+		if (tbms.length !== ids.length) {
+			throw new NotFoundException('일부 작업을 찾을 수 없습니다.');
+		}
+
+		await this.tbmRepository.softRemove(tbms);
+		return tbms.map((task) => task.id); // 실제 삭제된 ID만 리턴
 	}
 }

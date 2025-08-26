@@ -82,21 +82,34 @@ export class WorkshopService {
 
 		const qb = this.workshopRepository.createQueryBuilder('workshop');
 
+    qb.leftJoinAndSelect('workshop.company', 'company');
 		qb.where('workshop.deletedAt IS NULL');
+
 		if (req.user.role !== UserRole.MASTER) {
 			qb.andWhere('workshop.companyId = :id', { id: req.user.companyId });
 		}
+
 		if (searchKey && searchValue) {
 			const tempWhiteList = [
 				whiteList.workshopName,
 				whiteList.workshopAddress,
 				whiteList.companyName,
+        whiteList.companyId,
 			];
 
 			if (tempWhiteList.includes(searchKey)) {
-				qb.andWhere(`${searchKey} LIKE :value`, {
-					value: `%${searchValue}%`,
-				});
+				// Handle numeric vs text fields appropriately to avoid using LIKE on integers
+				if (searchKey === whiteList.companyId) {
+					const num = Number(searchValue);
+					if (!Number.isFinite(num)) {
+						throw new BadRequestException('companyId 검색 값은 숫자여야 합니다.');
+					}
+					qb.andWhere('company.id = :value', { value: num });
+				} else {
+					qb.andWhere(`${searchKey} LIKE :value`, {
+						value: `%${searchValue}%`,
+					});
+				}
 			} else {
 				throw new BadRequestException('잘못된 검색 키입니다.');
 			}

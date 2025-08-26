@@ -17,6 +17,7 @@ import { WorkshopService } from './workshop.service';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { Public } from "src/auth/decorator/public.decorator";
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('workshop')
@@ -36,6 +37,7 @@ export class WorkshopController {
 		return this.workshopService.findAll(req, dto);
 	}
 
+  @Public()
 	@Get(':id')
 	findOne(@Param('id') id: string) {
 		return this.workshopService.findOne(+id);

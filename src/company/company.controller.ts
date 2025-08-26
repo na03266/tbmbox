@@ -16,6 +16,7 @@ import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { Public } from "src/auth/decorator/public.decorator";
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('company')
@@ -27,6 +28,7 @@ export class CompanyController {
 		return this.companyService.create(createCompanyDto);
 	}
 
+  @Public()
 	@Get()
 	findAll(
 		@Request() req : any,

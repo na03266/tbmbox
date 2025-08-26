@@ -50,8 +50,12 @@ export class AuthController {
 	@Private()
 	@Post('token/access')
 	rotateAccessToken(@Request() req: any) {
+		const user = {
+			id: req.user.sub,
+			...req.user,
+		}
 		return {
-			accessToken: this.authService.issueToken(req.user, false),
+			accessToken: this.authService.issueToken(user, false),
 		};
 	}
 

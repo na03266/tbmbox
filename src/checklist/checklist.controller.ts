@@ -19,16 +19,22 @@ import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('checklist')
 export class ChecklistController {
-	constructor(private readonly checklistService: ChecklistService) {}
+	constructor(private readonly checklistService: ChecklistService) {
+	}
 
 	@Post()
-	create(@Body() createChecklistDto: CreateChecklistDto, @Request() req: any) {
+	create(@Request() req: any, @Body() createChecklistDto: CreateChecklistDto) {
 		return this.checklistService.create(req, createChecklistDto);
 	}
 
 	@Get()
 	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
 		return this.checklistService.findAll(req, dto);
+	}
+
+	@Get('task')
+	findForTask(@Request() req: any) {
+		return this.checklistService.findForTask(req);
 	}
 
 	@Post('generate')
