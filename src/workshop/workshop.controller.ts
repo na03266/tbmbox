@@ -29,6 +29,7 @@ export class WorkshopController {
 		return this.workshopService.create(createWorkshopDto);
 	}
 
+  @Public()
 	@Get()
 	findAll(
 		@Request() req:any,

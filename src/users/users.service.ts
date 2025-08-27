@@ -141,7 +141,11 @@ export class UsersService {
 		qb.leftJoinAndSelect('users.company', 'company')
 			.leftJoinAndSelect('users.workshop', 'workshop')
 			.where('users.deletedAt IS NULL');
-
+ 
+		qb.andWhere('users.role >= :userRole', {
+			userRole: req.user.role,
+		});
+		
 		if (req.user.role === UserRole.SUPERADMIN) {
 			qb.andWhere('users.companyId = :companyId', {
 				companyId: req.user.companyId,
@@ -153,6 +157,7 @@ export class UsersService {
 		} else if (req.user.role === UserRole.USER) {
 			qb.andWhere('users.id = :id', { id: req.user.id });
 		}
+		 
 		if (searchKey && searchValue) {
 			const tempWhiteList = [
 				whiteList.userName,

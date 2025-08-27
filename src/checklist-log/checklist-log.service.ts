@@ -55,10 +55,10 @@ export class ChecklistLogService {
 	}
 
 	async findAll(req: any, dto: PagePaginationDto) {
-		const { searchKey, searchValue } = dto;
+		const { searchKey, searchValue, startDate, endDate } = dto;
 		const qb = this.checklistLogRepository.createQueryBuilder('log');
 
-		qb.leftJoin('log.user', 'user');
+		qb.leftJoinAndSelect('log.user', 'user');
 		qb.where('log.deletedAt IS NULL');
 
 		if (req.user.role == UserRole.SUPERADMIN) {
@@ -77,7 +77,14 @@ export class ChecklistLogService {
 		if (searchKey && searchValue) {
 			qb.andWhere(`${searchKey} LIKE :value`, { value: `%${searchValue}%` });
 		}
-
+		if (startDate && endDate) {
+			const start = new Date(startDate);
+			const end = new Date(endDate);
+			qb.andWhere('log.createdAt BETWEEN :start AND :end', {
+				start,
+				end,
+			});
+		}
 		this.commonService.applyPagePaginationParamToQb(qb, dto);
 		qb.orderBy('log.createdAt', 'DESC');
 
@@ -85,21 +92,25 @@ export class ChecklistLogService {
 		return logList.map((log) => ({
 			id: log.id,
 			title: log.title,
-			user: log.user,
-			createdAt: log.createdAt,
+			userName: log.user.name,
+			createdAt: log.createdAt.toLocaleString(),
 		}));
 	}
 
 	async findOne(id: number) {
 		const checklistLog = await this.checklistLogRepository.findOne({
 			where: { id },
-			relations: ['children'],
+			relations: ['children', 'user'],
 		});
 		if (!checklistLog) {
 			throw new NotFoundException(`ChecklistLog with ID ${id} not found`);
 		}
 
-		return checklistLog;
+		return {
+			...checklistLog,
+			createdAt: checklistLog.createdAt.toLocaleString(),
+			children: checklistLog.children.map((child) => child.content),
+		};
 	}
 
 	async remove(id: number) {

@@ -23,6 +23,7 @@ import { Public } from "src/auth/decorator/public.decorator";
 export class CompanyController {
 	constructor(private readonly companyService: CompanyService) {}
 
+  @Public()
 	@Post()
 	create(@Body() createCompanyDto: CreateCompanyDto) {
 		return this.companyService.create(createCompanyDto);

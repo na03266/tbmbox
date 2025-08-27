@@ -95,27 +95,27 @@ export class TbmLogService {
 		searchKey?: string,
 		searchValue?: string,
 	) {
-		const qb = this.tbmLogRepository.createQueryBuilder('log');
-		qb.leftJoinAndSelect('log.company', 'company');
-		qb.leftJoinAndSelect('log.workshop', 'workshop');
-		qb.leftJoinAndSelect('log.createdByUser', 'createdByUser');
+		const qb = this.tbmLogRepository.createQueryBuilder('tbm');
+		qb.leftJoinAndSelect('tbm.company', 'company');
+		qb.leftJoinAndSelect('tbm.workshop', 'workshop');
+		qb.leftJoinAndSelect('tbm.createdByUser', 'creator');
 
 		// 기본 검색 쿼리(기본정보, 확인 사용자 이름 목록)
 		// 회사아이디 기준 (슈퍼어드민)
 		if (req.user.role === UserRole.SUPERADMIN) {
-			qb.andWhere('log.companyId = :companyId', {
+			qb.andWhere('tbm.companyId = :companyId', {
 				companyId: req.user.companyId,
 			});
 		}
 		// 워크숍 기준 (어드민)
 		if (req.user.role === UserRole.ADMIN) {
-			qb.andWhere('log.workShopId = :workShopId', {
+			qb.andWhere('tbm.workShopId = :workShopId', {
 				workShopId: req.user.workshopId,
 			});
 		}
 		/// 확인 유저에 포함된 사용자 (사용자)
 		if (req.user.role === UserRole.USER) {
-			qb.innerJoinAndSelect('log.confirmUsers', 'user').where(
+			qb.innerJoinAndSelect('tbm.confirmUsers', 'user').where(
 				'user.id = :userId',
 				{ userId: req.user.sub },
 			);
@@ -124,7 +124,7 @@ export class TbmLogService {
 		if (startDate && endDate) {
 			const start = new Date(startDate);
 			const end = new Date(endDate);
-			qb.andWhere('log.createdAt BETWEEN :start AND :end', {
+			qb.andWhere('tbm.createdAt BETWEEN :start AND :end', {
 				start,
 				end,
 			});
@@ -136,24 +136,29 @@ export class TbmLogService {
 			});
 		}
 
-		const list = await qb.getMany();
+		qb.orderBy('tbm.createdAt', 'DESC');
 
-		return list.map((item) => {
-			return {
-				id: item.id,
-				title: item.title,
-				workshop: item.workshop?.name ?? null,
-				company: item.company.name,
-				createdAt: item.createdAt,
-				createdByUser: item.createdByUser.name,
-			};
-		});
+		const list = await qb.getMany();
+    const total = await qb.getCount();
+		return {
+     data: list.map((item) => {
+       return {
+         id: item.id,
+         title: item.title,
+         workshop: item.workshop?.name ?? null,
+         company: item.company.name,
+         createdAt: item.createdAt.toLocaleString(),
+         createdByUser: item.createdByUser.name,
+       };
+     }),
+     total,
+    }
 	}
 
 	async findOne(id: number) {
 		return await this.tbmLogRepository.findOne({
 			where: { id },
-			relations: ['confirmUsers'],
+			relations: ['confirmUsers', 'workshop', 'company', 'createdByUser'],
 			select: {
 				confirmUsers: {
 					id: true,
