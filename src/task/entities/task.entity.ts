@@ -15,6 +15,7 @@ import { Tool } from '../../tool/entities/tool.entity';
 import { Tbm } from '../../tbm/entities/tbm.entity'; // 추가
 import { Exclude } from 'class-transformer';
 import { Checklist } from '../../checklist/entities/checklist.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Task extends BaseTable {
@@ -52,4 +53,8 @@ export class Task extends BaseTable {
 
 	@OneToOne(() => Checklist, (checklist) => checklist.task)
 	checklist: Checklist;
+
+	// Tbm과의 다대다 관계 (조인 테이블 소유측)
+	@ManyToMany(() => User, (user) => user.tasks)
+	users: User[];
 }

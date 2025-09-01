@@ -6,10 +6,11 @@ import { Tbm } from './entities/tbm.entity';
 import { Task } from '../task/entities/task.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
 import { CommonModule } from '../common/common.module';
+import { TbmUserService } from './tbm.user/tbm.user.service';
 
 @Module({
 	imports: [TypeOrmModule.forFeature([Tbm, Task, Workshop]), CommonModule],
 	controllers: [TbmController],
-	providers: [TbmService],
+	providers: [TbmService, TbmUserService],
 })
 export class TbmModule {}

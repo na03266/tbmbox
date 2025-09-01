@@ -81,6 +81,7 @@ export class WorkshopService {
 
     qb.leftJoinAndSelect('workshop.company', 'company');
     qb.where('workshop.deletedAt IS NULL');
+
 		if(req.user){
 			if (req.user.role !== UserRole.MASTER) {
 				qb.andWhere('workshop.companyId = :id', {id: req.user.companyId});

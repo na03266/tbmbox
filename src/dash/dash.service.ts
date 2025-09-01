@@ -134,7 +134,7 @@ export class DashService {
 				companyId: req.user.companyId,
 				isActivated: false,
 			},
-			select: ['name', 'company', 'isActivated'],
+			relations: ['workshop'],
 		});
 
 		// 활성/비활성 회원 수
@@ -166,13 +166,46 @@ export class DashService {
 			},
 			workshopStats,
 			weeklyIncomplete,
-			pendingUsers,
+			pendingUsers :pendingUsers.map((e)=> {
+				return {
+					name: e.name,
+					workshopName: e.workshop?.name ?? '미지정',
+					isActivated: e.isActivated
+				}
+			}),
 			enabledUser: enabledCount,
 			disabledUser: disabledCount,
 		};
 	}
-	findOne(id: number) {
-		return `This action returns a #${id} dash`;
+	async findOne(id: number) {
+		// 최근 활동
+		// tbm log, checklist log
+		// 최신순서로 타이틀, 시간 3개만
+		// 여기서의 id는 회사 ID로 가정합니다.
+		// 두 로그 테이블에서 각각 최신 항목을 가져온 뒤 병합/정렬하여 상위 3개만 반환합니다.
+		const [tbmLogs, checkLogs] = await Promise.all([
+			this.tbmLogRepository.find({
+				where: { companyId: id },
+				select: ['id', 'title', 'createdAt'],
+				order: { createdAt: 'DESC' },
+				take: 3,
+			}),
+			this.checkLogRepository.find({
+				where: { companyId: id },
+				select: ['id', 'title', 'createdAt'],
+				order: { createdAt: 'DESC' },
+				take: 3,
+			}),
+		]);
+
+		const normalized = [
+			...tbmLogs.map((l) => ({ type: 'tbm', id: l.id, title: l.title, createdAt: l.createdAt })),
+			...checkLogs.map((l) => ({ type: 'checklist', id: l.id, title: l.title, createdAt: l.createdAt })),
+		];
+
+		normalized.sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+
+		return normalized.slice(0, 3);
 	}
 
 	update(id: number, updateDashDto: UpdateDashDto) {

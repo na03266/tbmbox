@@ -4,7 +4,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Company } from 'src/company/entities/company.entity';
@@ -16,6 +16,7 @@ import { ConfigService } from '@nestjs/config';
 import { whiteList } from '../common/const/whitelist.const';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 import { CommonService } from '../common/common.service';
+import { Task } from '../task/entities/task.entity';
 
 @Injectable()
 export class UsersService {
@@ -29,6 +30,8 @@ export class UsersService {
 		private readonly configService: ConfigService,
 		private readonly dataSource: DataSource,
 		private readonly commonService: CommonService,
+		@InjectRepository(Task)
+		private readonly taskRepository: Repository<Task>,
 	) {}
 
 	async create(createUserByAdminDto: CreateUserByAdminDto) {
@@ -141,11 +144,11 @@ export class UsersService {
 		qb.leftJoinAndSelect('users.company', 'company')
 			.leftJoinAndSelect('users.workshop', 'workshop')
 			.where('users.deletedAt IS NULL');
- 
+
 		qb.andWhere('users.role >= :userRole', {
 			userRole: req.user.role,
 		});
-		
+
 		if (req.user.role === UserRole.SUPERADMIN) {
 			qb.andWhere('users.companyId = :companyId', {
 				companyId: req.user.companyId,
@@ -157,7 +160,7 @@ export class UsersService {
 		} else if (req.user.role === UserRole.USER) {
 			qb.andWhere('users.id = :id', { id: req.user.id });
 		}
-		 
+
 		if (searchKey && searchValue) {
 			const tempWhiteList = [
 				whiteList.userName,
@@ -206,6 +209,7 @@ export class UsersService {
 	}
 
 	async update(id: number, updateUserDto: UpdateUserDto) {
+		console.log(updateUserDto);
 		const qr = this.dataSource.createQueryRunner();
 		await qr.connect();
 		await qr.startTransaction();
@@ -220,13 +224,28 @@ export class UsersService {
 				throw new NotFoundException('User not found');
 			}
 
+			if (
+				updateUserDto.password !== undefined &&
+				updateUserDto.password !== null &&
+				updateUserDto.password !== ''
+			) {
+				updateUserDto.password = await bcrypt.hash(
+					updateUserDto.password,
+					this.configService.getOrThrow<number>(envVariables.hashRounds),
+				);
+			} else {
+				delete updateUserDto.password;
+			}
 			// Normalize incoming relation IDs: treat 0 as null (unassign)
 			const normalizedDto: any = { ...updateUserDto };
 			if (normalizedDto.companyId === 0) normalizedDto.companyId = null;
 			if (normalizedDto.workshopId === 0) normalizedDto.workshopId = null;
 
 			// Validate only when a non-null value is provided
-			if (normalizedDto.companyId !== undefined && normalizedDto.companyId !== null) {
+			if (
+				normalizedDto.companyId !== undefined &&
+				normalizedDto.companyId !== null
+			) {
 				const company = await qr.manager.findOne(Company, {
 					where: { id: normalizedDto.companyId },
 				});
@@ -235,7 +254,10 @@ export class UsersService {
 				}
 			}
 
-			if (normalizedDto.workshopId !== undefined && normalizedDto.workshopId !== null) {
+			if (
+				normalizedDto.workshopId !== undefined &&
+				normalizedDto.workshopId !== null
+			) {
 				const workshop = await qr.manager.findOne(Workshop, {
 					where: { id: normalizedDto.workshopId },
 				});
@@ -287,4 +309,5 @@ export class UsersService {
 
 		return id;
 	}
+
 }

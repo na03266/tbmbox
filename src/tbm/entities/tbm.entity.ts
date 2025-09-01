@@ -14,7 +14,6 @@ import { Task } from '../../task/entities/task.entity';
 import { Company } from '../../company/entities/company.entity';
 import { User } from '../../users/entities/user.entity'; // 추가
 
-@Unique(['title', 'workshopId'])
 @Entity()
 export class Tbm extends BaseTable {
 	@PrimaryGeneratedColumn()

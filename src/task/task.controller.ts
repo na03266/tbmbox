@@ -17,11 +17,15 @@ import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
+import { TaskUserService } from './task.user/task.user.service';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('task')
 export class TaskController {
-	constructor(private readonly taskService: TaskService) {}
+	constructor(
+		private readonly taskService: TaskService,
+		private readonly taskUserService: TaskUserService,
+	) {}
 
 	@Post()
 	create(@Body() createTaskDto: CreateTaskDto) {
@@ -29,10 +33,14 @@ export class TaskController {
 	}
 	@Post('generate')
 	generate(@Body() dto: CreateTaskDto) {
-		console.log(' 요청 ');
 		return this.taskService.generateChecklistItems(dto);
 	}
 
+	@Get('/user')
+	findListForUser(@Request() req: any) {
+		// 사용자용
+		return this.taskUserService.findAll(req);
+	}
 	@Get()
 	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
 		/// 관리자용, 하위 관리자용, 사용자용
@@ -51,7 +59,14 @@ export class TaskController {
 	findOne(@Param('id') id: string) {
 		return this.taskService.findOne(+id);
 	}
-
+	@Patch('user/tasks')
+	updateTasks(
+		@Request() req: any,
+		@Body('taskIds', new ParseArrayPipe({ items: Number, separator: ',' }))
+		taskIds: number[],
+	) {
+		return this.taskUserService.updateTasks(req, taskIds);
+	}
 	@Patch(':id')
 	update(
 		@Param('id', ParseIntPipe) id: string,
@@ -59,6 +74,7 @@ export class TaskController {
 	) {
 		return this.taskService.update(+id, updateTaskDto);
 	}
+
 	@Patch(':id/tools')
 	updateTools(
 		@Param('id', ParseIntPipe) id: number,

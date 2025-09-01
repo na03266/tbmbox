@@ -7,6 +7,7 @@ import { Workshop } from '../workshop/entities/workshop.entity';
 import { User } from '../users/entities/user.entity';
 import { Tool } from '../tool/entities/tool.entity';
 import { CommonModule } from '../common/common.module';
+import { TaskUserService } from './task.user/task.user.service';
 
 @Module({
 	imports: [
@@ -14,6 +15,6 @@ import { CommonModule } from '../common/common.module';
 		CommonModule,
 	],
 	controllers: [TaskController],
-	providers: [TaskService],
+	providers: [TaskService, TaskUserService],
 })
 export class TaskModule {}

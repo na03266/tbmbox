@@ -5,6 +5,7 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseArrayPipe,
 	ParseIntPipe,
 	Patch,
 	Post,

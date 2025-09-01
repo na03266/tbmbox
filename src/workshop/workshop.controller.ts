@@ -29,14 +29,23 @@ export class WorkshopController {
 		return this.workshopService.create(createWorkshopDto);
 	}
 
-  @Public()
 	@Get()
 	findAll(
 		@Request() req:any,
 		@Query() dto: PagePaginationDto,
 	) {
+		console.log();
 		return this.workshopService.findAll(req, dto);
 	}
+  @Public()
+	@Get('/user')
+	forUser	(
+		@Request() req:any,
+		@Query() dto: PagePaginationDto,
+	) {
+		return this.workshopService.findAll(req, dto);
+	}
+
 
   @Public()
 	@Get(':id')

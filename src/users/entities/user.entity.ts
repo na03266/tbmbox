@@ -1,10 +1,9 @@
 import {
 	Column,
 	Entity,
-	JoinColumn,
+	JoinColumn, JoinTable,
 	ManyToMany,
 	ManyToOne,
-	OneToMany,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Company } from '../../company/entities/company.entity';
@@ -12,6 +11,7 @@ import { Workshop } from '../../workshop/entities/workshop.entity';
 import { Exclude } from 'class-transformer';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { TbmLog } from '../../tbm-log/entities/tbm-log.entity';
+import { Task } from '../../task/entities/task.entity';
 
 export enum UserRole {
 	MASTER,
@@ -74,4 +74,8 @@ export class User extends BaseTable {
 
 	@ManyToMany(() => TbmLog, (tbmLog) => tbmLog.confirmUsers)
 	tbmLogs: TbmLog[];
+
+	@ManyToMany(()=> Task, (task) => task.users)
+	@JoinTable()
+	tasks: Task[];
 }
