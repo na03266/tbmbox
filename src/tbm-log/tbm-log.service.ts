@@ -18,14 +18,14 @@ export class TbmLogService {
 		private readonly userRepository: Repository<User>,
 	) {}
 
-	async create(createTbmLogDto: CreateTbmLogDto) {
+	async create(req: any, createTbmLogDto: CreateTbmLogDto) {
 		//1. tbm 정보 확인
 		const tbm = await this.isTbm(createTbmLogDto.tbmId);
 
 		// 3. 금일의 tbmLog 존재여부 확인
 		const existingTbmLog = await this.isTbmLog(tbm);
 		// 3. 사용자 정보 확인
-		const user = await this.isUser(createTbmLogDto.userId);
+		const user = await this.isUser(req.user.sub);
 
 		if (existingTbmLog) {
 			const existingUser = existingTbmLog.confirmUsers.find(
@@ -139,20 +139,20 @@ export class TbmLogService {
 		qb.orderBy('tbm.createdAt', 'DESC');
 
 		const list = await qb.getMany();
-    const total = await qb.getCount();
+		const total = await qb.getCount();
 		return {
-     data: list.map((item) => {
-       return {
-         id: item.id,
-         title: item.title,
-         workshop: item.workshop?.name ?? null,
-         company: item.company.name,
-         createdAt: item.createdAt.toLocaleString(),
-         createdByUser: item.createdByUser.name,
-       };
-     }),
-     total,
-    }
+			data: list.map((item) => {
+				return {
+					id: item.id,
+					title: item.title,
+					workshop: item.workshop?.name ?? null,
+					company: item.company.name,
+					createdAt: item.createdAt.toLocaleString(),
+					createdByUser: item.createdByUser.name,
+				};
+			}),
+			total,
+		};
 	}
 
 	async findOne(id: number) {

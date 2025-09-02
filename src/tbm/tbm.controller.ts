@@ -17,11 +17,15 @@ import { CreateTbmDto } from './dto/create-tbm.dto';
 import { UpdateTbmDto } from './dto/update-tbm.dto';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 import { GenerateTbmDto } from './dto/generate-tbm.dto';
+import { TbmUserService } from './tbm.user/tbm.user.service';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tbm')
 export class TbmController {
-	constructor(private readonly tbmService: TbmService) {}
+	constructor(
+		private readonly tbmService: TbmService,
+		private readonly tbmUserService: TbmUserService,
+	) {}
 
 	@Post()
 	create(@Request() req: any, @Body() createTbmDto: CreateTbmDto) {
@@ -30,15 +34,29 @@ export class TbmController {
 	}
 
 	@Post('generate')
-	generate(
-		@Body() dto: GenerateTbmDto,
-	) {
+	generate(@Body() dto: GenerateTbmDto) {
 		return this.tbmService.generateTbmContent(dto);
 	}
 
 	@Get()
 	findAll(@Request() req: any, @Query() dto: PagePaginationDto) {
 		return this.tbmService.findAll(req, dto);
+	}
+	@Get('/user')
+	findForUser(
+		@Request() req: any,
+		@Query(
+			'taskIds',
+			new ParseArrayPipe({ items: Number, separator: ',', optional: true }),
+		)
+		taskIds?: number[],
+	) {
+		return this.tbmUserService.findTbmForUser(req, taskIds ?? []);
+	}
+
+	@Get('/user/:id')
+	findOneForUser(@Request() req: any, @Param('id') id: String) {
+		return this.tbmUserService.findOneTbmForUser(req, +id);
 	}
 
 	@Get(':id')
@@ -55,13 +73,11 @@ export class TbmController {
 	removeMultiple(
 		@Body('ids', new ParseArrayPipe({ items: Number, separator: ',' }))
 		ids: number[],
-	){
+	) {
 		return this.tbmService.removeMultiple(ids);
-
 	}
 	@Delete(':id')
 	remove(@Param('id') id: string) {
 		return this.tbmService.remove(+id);
 	}
-
 }
