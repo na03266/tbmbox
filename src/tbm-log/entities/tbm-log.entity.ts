@@ -14,7 +14,7 @@ import { Tbm } from '../../tbm/entities/tbm.entity';
 import { Workshop } from '../../workshop/entities/workshop.entity';
 import { Company } from '../../company/entities/company.entity';
 
-@Unique(['tbmId', 'temVersion'])
+@Unique(['tbmId', 'temVersion', 'createdAt'])
 @Entity()
 export class TbmLog {
 	@PrimaryGeneratedColumn()

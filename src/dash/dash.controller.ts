@@ -26,6 +26,11 @@ export class DashController {
 		return this.dashService.findAll(req);
 	}
 
+	@Get('user')
+	findForUser(@Request() req: any) {
+		return this.dashService.findAllForUser(req);
+	}
+
 	@Get(':id')
 	findOne(@Param('id') id: string) {
 		return this.dashService.findOne(+id);

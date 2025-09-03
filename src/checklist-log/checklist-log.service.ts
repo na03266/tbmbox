@@ -6,7 +6,6 @@ import { Repository } from 'typeorm';
 import { ChecklistLog } from './entities/checklist-log.entity';
 import { ChecklistLogChild } from './entities/checklist-log-child.entity';
 import { UserRole } from '../users/entities/user.entity';
-import { CommonService } from '../common/common.service';
 import { PagePaginationDto } from '../common/dto/page-pagination.dto';
 
 @Injectable()
@@ -18,7 +17,6 @@ export class ChecklistLogService {
 		private readonly checklistLogRepository: Repository<ChecklistLog>,
 		@InjectRepository(ChecklistLogChild)
 		private readonly checklistLogChildRepository: Repository<ChecklistLogChild>,
-		private readonly commonService: CommonService,
 	) {}
 	async create(req: any, createChecklistLogDto: CreateChecklistLogDto) {
 		const checklist = await this.checklistRepository.findOne({
@@ -85,16 +83,18 @@ export class ChecklistLogService {
 				end,
 			});
 		}
-		this.commonService.applyPagePaginationParamToQb(qb, dto);
 		qb.orderBy('log.createdAt', 'DESC');
 
 		const logList = await qb.getMany();
-		return logList.map((log) => ({
-			id: log.id,
-			title: log.title,
-			userName: log.user.name,
-			createdAt: log.createdAt.toLocaleString(),
-		}));
+		return {
+			data: logList.map((log) => ({
+				id: log.id,
+				title: log.title,
+				userName: log.user.name,
+				createdAt: log.createdAt.toLocaleString(),
+			})),
+			total: await qb.getCount(),
+		};
 	}
 
 	async findOne(id: number) {

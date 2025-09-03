@@ -44,8 +44,9 @@ export class ToolService {
 		const { searchKey, searchValue } = dto;
 
 		const qb = this.toolRepository
-			.createQueryBuilder('tool')
-			.where('tool.deletedAt IS NULL');
+			.createQueryBuilder('tool');
+
+			qb.where('tool.deletedAt IS NULL');
 
 		if (req.user.role !== UserRole.MASTER) {
 			qb.andWhere('tool.companyId = :id', { id: req.user.companyId });

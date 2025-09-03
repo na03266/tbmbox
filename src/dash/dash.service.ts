@@ -3,7 +3,7 @@ import { CreateDashDto } from './dto/create-dash.dto';
 import { UpdateDashDto } from './dto/update-dash.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
-import { Between, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { TbmLog } from '../tbm-log/entities/tbm-log.entity';
 import { ChecklistLog } from '../checklist-log/entities/checklist-log.entity';
 import { Workshop } from '../workshop/entities/workshop.entity';
@@ -208,6 +208,115 @@ export class DashService {
 		return normalized.slice(0, 3);
 	}
 
+	async findAllForUser(req: any){
+		// 요구사항에 따라 현재 로그인한 사용자의 작업(Task) 기준으로 남은 항목과 최근 진행 이력을 반환
+		// - 남은 TBM/체크리스트: 오늘 기준, 사용자에게 연결된 Task에서 파생된 TBM/체크리스트 중 아직 본인이 작성하지 않은 개수
+		// - 최근 진행: 사용자 본인이 작성한 TBM 로그, 체크리스트 로그를 합쳐 최신순 3개 반환
+		const userId = req?.user?.sub;
+		if (!userId) {
+			return { remainTbm: 0, remainChecklist: 0, current: [] };
+		}
+
+		// 사용자 + 관계 로드 (tasks, tasks.tbms, tasks.checklist)
+		const user = await this.userRepository.findOne({
+			where: { id: userId },
+			relations: ['tasks', 'tasks.tbms', 'tasks.checklist'],
+		});
+		if (!user) {
+			return { remainTbm: 0, remainChecklist: 0, current: [] };
+		}
+
+		// 오늘 범위
+		const start = new Date();
+		start.setHours(0, 0, 0, 0);
+		const end = new Date();
+		end.setHours(23, 59, 59, 999);
+
+		// 사용자에게 연결된 Task에서 파생된 TBM/Checklist ID 집합
+		const tasks = user.tasks ?? [];
+		const tbmIds = Array.from(new Set(tasks.flatMap((t: any) => (t.tbms ?? []).map((tbm: any) => tbm.id))));
+		const checklistIdByTask: Record<number, number> = {};
+
+		const taskTitleByChecklistId: Record<number, string> = {};
+
+		for (const t of tasks) {
+			if (t.checklist) {
+				checklistIdByTask[t.id] = t.checklist.id;
+				taskTitleByChecklistId[t.checklist.id] = t.title;
+			}
+		}
+		const checklistIds = Object.values(checklistIdByTask);
+
+		// 오늘 사용자 본인이 완료한 TBM 로그 / 체크리스트 로그 찾기
+		let doneTbmIdsToday: number[] = [];
+		let doneChecklistIdsToday: number[] = [];
+
+		if (tbmIds.length > 0) {
+			const tbmDone = await this.tbmLogRepository.find({
+				where: {
+					confirmUsers: { id: userId },
+					tbmId: In(tbmIds),
+					createdAt: Between(start, end),
+				},
+				select: ['tbmId'],
+			});
+			doneTbmIdsToday = Array.from(new Set(tbmDone.map((l) => l.tbmId)));
+		}
+		if (checklistIds.length > 0) {
+			const chkDone = await this.checkLogRepository.find({
+				where: {
+					userId: userId,
+					checklistId: In(checklistIds),
+					createdAt: Between(start, end),
+				},
+				select: ['checklistId'],
+			});
+			doneChecklistIdsToday = Array.from(new Set(chkDone.map((l) => l.checklistId)));
+		}
+
+		const remainTbm = Math.max(0, tbmIds.length - doneTbmIdsToday.length);
+		const remainChecklist = Math.max(0, checklistIds.length - doneChecklistIdsToday.length);
+
+		// 최근 진행 이력: 사용자 본인이 작성한 로그 중, 사용자에게 연결된 Task에서 발생한 TBM/체크리스트만 고려
+		const [recentTbmLogs, recentChecklistLogs] = await Promise.all([
+			tbmIds.length > 0
+				? this.tbmLogRepository.find({
+					where: { createdBy: userId, tbmId: In(tbmIds) },
+					select: ['id', 'title', 'createdAt'],
+					order: { createdAt: 'DESC' },
+					take: 3,
+				})
+				: Promise.resolve([]),
+			checklistIds.length > 0
+				? this.checkLogRepository.find({
+					where: { userId: userId, checklistId: In(checklistIds) },
+					select: ['id', 'checklistId', 'createdAt'],
+					order: { createdAt: 'DESC' },
+					take: 3,
+				})
+				: Promise.resolve([]),
+		]);
+
+		const normalized = [
+			// TBM: type 0, title은 로그의 title 사용
+			...recentTbmLogs.map((l: any) => ({ type: 0, title: l.title, createdAt: l.createdAt })),
+			// Checklist: type 1, title은 작업(Task)의 제목 사용
+			...recentChecklistLogs.map((l: any) => ({
+				type: 1,
+				title: taskTitleByChecklistId[l.checklistId] ?? '체크리스트',
+				createdAt: l.createdAt,
+			})),
+		];
+
+		normalized.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+		const current = normalized.slice(0, 3);
+
+		return {
+			remainTbm,
+			remainChecklist,
+			current,
+		};
+	}
 	update(id: number, updateDashDto: UpdateDashDto) {
 		return `This action updates a #${id} dash`;
 	}
