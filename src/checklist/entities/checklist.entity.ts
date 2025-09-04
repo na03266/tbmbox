@@ -10,13 +10,14 @@ export class Checklist extends BaseTable {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column()
-	taskId: number;
-
 	@Column({
 		type: 'text',
 	})
 	note: string;
+
+
+	@Column()
+	taskId: number;
 
 	@ManyToOne(() => Task, (task) => task.checklist)
 	@JoinColumn({ name: 'taskId' })

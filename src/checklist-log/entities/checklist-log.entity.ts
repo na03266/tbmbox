@@ -11,6 +11,7 @@ import { ChecklistLogChild } from './checklist-log-child.entity';
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { Company } from '../../company/entities/company.entity';
 import { Workshop } from '../../workshop/entities/workshop.entity';
+import { Task } from '../../task/entities/task.entity';
 
 @Entity()
 export class ChecklistLog extends BaseTable {
@@ -26,6 +27,13 @@ export class ChecklistLog extends BaseTable {
 
 	@Column()
 	checklistId: number;
+
+	@Column()
+	taskId: number;
+
+	@ManyToOne(() => Task, (task) => task.checklist)
+	@JoinColumn({ name: 'taskId' })
+	task: Task;
 
 	@Column()
 	title: string;

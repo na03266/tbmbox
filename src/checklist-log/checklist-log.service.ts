@@ -31,6 +31,7 @@ export class ChecklistLogService {
 		const checklistLog = this.checklistLogRepository.create({
 			checklistId: checklist.id,
 			userId: req.user.sub,
+			taskId: checklist.taskId,
 			checklistVersion: checklist.version,
 			title: checklist.task.title,
 			companyId: req.user.companyId,

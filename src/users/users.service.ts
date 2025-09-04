@@ -243,6 +243,7 @@ export class UsersService {
 
 			// Validate only when a non-null value is provided
 			if (
+				user.companyId !==normalizedDto.companyId &&
 				normalizedDto.companyId !== undefined &&
 				normalizedDto.companyId !== null
 			) {
@@ -252,9 +253,11 @@ export class UsersService {
 				if (!company) {
 					throw new NotFoundException('Company not found');
 				}
+				normalizedDto.isActivated = false;
 			}
 
 			if (
+				user.workshopId !== normalizedDto.workshopId &&
 				normalizedDto.workshopId !== undefined &&
 				normalizedDto.workshopId !== null
 			) {
@@ -264,6 +267,7 @@ export class UsersService {
 				if (!workshop) {
 					throw new NotFoundException('Workshop not found');
 				}
+				normalizedDto.isActivated = false;
 			}
 
 			const userUpdateFields: any = {

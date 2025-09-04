@@ -45,6 +45,11 @@ export class TaskUserService {
 			throw new NotFoundException('user not found');
 		}
 
+		if(taskIds.length === 0) {
+			user.tasks = [];
+			return this.userRepository.save(user);
+		}
+
 		const tasks = await this.taskRepository.findBy({
 			id: In(taskIds),
 		});

@@ -33,7 +33,7 @@ export class TaskController {
 	}
 	@Post('generate')
 	generate(@Body() dto: CreateTaskDto) {
-		return this.taskService.generateChecklistItems(dto);
+		return this.taskService.generateTaskInfo(dto);
 	}
 
 	@Get('/user')

@@ -24,7 +24,7 @@ export class DashService {
 		return 'This action adds a new dash';
 	}
 
-	async findAll(req:any) {
+	async findAll(req: any) {
 		// 금일 TBM 완료자 수
 		const todayTbmCount = await this.tbmLogRepository.count({
 			where: {
@@ -61,11 +61,21 @@ export class DashService {
 			.createQueryBuilder('workshop')
 			.select('workshop.id', 'workshopId')
 			.addSelect('workshop.name', 'workshopName')
-			.addSelect('SUM(CASE WHEN user.isActivated = true THEN 1 ELSE 0 END)', 'activeCount')
-			.addSelect('SUM(CASE WHEN user.isActivated = false THEN 1 ELSE 0 END)', 'inactiveCount')
+			.addSelect(
+				'SUM(CASE WHEN user.isActivated = true THEN 1 ELSE 0 END)',
+				'activeCount',
+			)
+			.addSelect(
+				'SUM(CASE WHEN user.isActivated = false THEN 1 ELSE 0 END)',
+				'inactiveCount',
+			)
 			.addSelect('COUNT(user.id)', 'totalCount')
-			.leftJoin('workshop.users', 'user', 'user.companyId = :companyId', { companyId: req.user.companyId })
-			.where('workshop.companyId = :companyId', { companyId: req.user.companyId })
+			.leftJoin('workshop.users', 'user', 'user.companyId = :companyId', {
+				companyId: req.user.companyId,
+			})
+			.where('workshop.companyId = :companyId', {
+				companyId: req.user.companyId,
+			})
 			.groupBy('workshop.id')
 			.addGroupBy('workshop.name')
 			.getRawMany();
@@ -93,7 +103,11 @@ export class DashService {
 		endOfWeek.setDate(startOfWeek.getDate() + 6);
 		endOfWeek.setHours(23, 59, 59, 999);
 
-		const weeklyIncomplete: { date: string; noTbmCount: number; noCheckCount: number }[] = [];
+		const weeklyIncomplete: {
+			date: string;
+			noTbmCount: number;
+			noCheckCount: number;
+		}[] = [];
 
 		for (let i = 0; i < 7; i++) {
 			const dayStart = new Date(startOfWeek);
@@ -107,7 +121,10 @@ export class DashService {
 				.createQueryBuilder('tbm')
 				.select('COUNT(DISTINCT tbm.createdBy)', 'count')
 				.where('tbm.companyId = :companyId', { companyId: req.user.companyId })
-				.andWhere('tbm.createdAt BETWEEN :start AND :end', { start: dayStart, end: dayEnd })
+				.andWhere('tbm.createdAt BETWEEN :start AND :end', {
+					start: dayStart,
+					end: dayEnd,
+				})
 				.getRawOne<{ count: string }>();
 			const tbmCompleted = Number(tbmCompletedRow?.count ?? 0);
 
@@ -116,7 +133,10 @@ export class DashService {
 				.createQueryBuilder('chk')
 				.select('COUNT(DISTINCT chk.userId)', 'count')
 				.where('chk.companyId = :companyId', { companyId: req.user.companyId })
-				.andWhere('chk.createdAt BETWEEN :start AND :end', { start: dayStart, end: dayEnd })
+				.andWhere('chk.createdAt BETWEEN :start AND :end', {
+					start: dayStart,
+					end: dayEnd,
+				})
 				.getRawOne<{ count: string }>();
 			const checkCompleted = Number(checkCompletedRow?.count ?? 0);
 
@@ -157,21 +177,23 @@ export class DashService {
 			tbm: {
 				count: todayTbmCount,
 				total: totalUsers,
-				percent: totalUsers > 0 ? Math.round((todayTbmCount / totalUsers) * 100) : 0,
+				percent:
+					totalUsers > 0 ? Math.round((todayTbmCount / totalUsers) * 100) : 0,
 			},
 			check: {
 				count: todayCheckCount,
 				total: totalUsers,
-				percent: totalUsers > 0 ? Math.round((todayCheckCount / totalUsers) * 100) : 0,
+				percent:
+					totalUsers > 0 ? Math.round((todayCheckCount / totalUsers) * 100) : 0,
 			},
 			workshopStats,
 			weeklyIncomplete,
-			pendingUsers :pendingUsers.map((e)=> {
+			pendingUsers: pendingUsers.map((e) => {
 				return {
 					name: e.name,
 					workshopName: e.workshop?.name ?? '미지정',
-					isActivated: e.isActivated
-				}
+					isActivated: e.isActivated,
+				};
 			}),
 			enabledUser: enabledCount,
 			disabledUser: disabledCount,
@@ -199,16 +221,29 @@ export class DashService {
 		]);
 
 		const normalized = [
-			...tbmLogs.map((l) => ({ type: 'tbm', id: l.id, title: l.title, createdAt: l.createdAt })),
-			...checkLogs.map((l) => ({ type: 'checklist', id: l.id, title: l.title, createdAt: l.createdAt })),
+			...tbmLogs.map((l) => ({
+				type: 'tbm',
+				id: l.id,
+				title: l.title,
+				createdAt: l.createdAt,
+			})),
+			...checkLogs.map((l) => ({
+				type: 'checklist',
+				id: l.id,
+				title: l.title,
+				createdAt: l.createdAt,
+			})),
 		];
 
-		normalized.sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+		normalized.sort(
+			(a, b) =>
+				new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+		);
 
 		return normalized.slice(0, 3);
 	}
 
-	async findAllForUser(req: any){
+	async findAllForUser(req: any) {
 		// 요구사항에 따라 현재 로그인한 사용자의 작업(Task) 기준으로 남은 항목과 최근 진행 이력을 반환
 		// - 남은 TBM/체크리스트: 오늘 기준, 사용자에게 연결된 Task에서 파생된 TBM/체크리스트 중 아직 본인이 작성하지 않은 개수
 		// - 최근 진행: 사용자 본인이 작성한 TBM 로그, 체크리스트 로그를 합쳐 최신순 3개 반환
@@ -234,7 +269,11 @@ export class DashService {
 
 		// 사용자에게 연결된 Task에서 파생된 TBM/Checklist ID 집합
 		const tasks = user.tasks ?? [];
-		const tbmIds = Array.from(new Set(tasks.flatMap((t: any) => (t.tbms ?? []).map((tbm: any) => tbm.id))));
+		const tbmIds = Array.from(
+			new Set(
+				tasks.flatMap((t: any) => (t.tbms ?? []).map((tbm: any) => tbm.id)),
+			),
+		);
 		const checklistIdByTask: Record<number, number> = {};
 
 		const taskTitleByChecklistId: Record<number, string> = {};
@@ -271,50 +310,62 @@ export class DashService {
 				},
 				select: ['checklistId'],
 			});
-			doneChecklistIdsToday = Array.from(new Set(chkDone.map((l) => l.checklistId)));
+			doneChecklistIdsToday = Array.from(
+				new Set(chkDone.map((l) => l.checklistId)),
+			);
 		}
 
 		const remainTbm = Math.max(0, tbmIds.length - doneTbmIdsToday.length);
-		const remainChecklist = Math.max(0, checklistIds.length - doneChecklistIdsToday.length);
+		const remainChecklist = Math.max(
+			0,
+			checklistIds.length - doneChecklistIdsToday.length,
+		);
 
 		// 최근 진행 이력: 사용자 본인이 작성한 로그 중, 사용자에게 연결된 Task에서 발생한 TBM/체크리스트만 고려
 		const [recentTbmLogs, recentChecklistLogs] = await Promise.all([
-			tbmIds.length > 0
-				? this.tbmLogRepository.find({
-					where: { createdBy: userId, tbmId: In(tbmIds) },
-					select: ['id', 'title', 'createdAt'],
-					order: { createdAt: 'DESC' },
-					take: 3,
-				})
-				: Promise.resolve([]),
-			checklistIds.length > 0
-				? this.checkLogRepository.find({
-					where: { userId: userId, checklistId: In(checklistIds) },
-					select: ['id', 'checklistId', 'createdAt'],
-					order: { createdAt: 'DESC' },
-					take: 3,
-				})
-				: Promise.resolve([]),
+			this.tbmLogRepository.find({
+				where: { confirmUsers: userId },
+				select: ['id', 'title', 'createdAt'],
+				order: { createdAt: 'DESC' },
+				take: 3,
+			}),
+			this.checkLogRepository.find({
+				where: { userId: userId },
+				relations: ['task'],
+				select: ['id', 'checklistId', 'createdAt'],
+				order: { createdAt: 'DESC' },
+				take: 3,
+			},),
 		]);
 
 		const normalized = [
 			// TBM: type 0, title은 로그의 title 사용
-			...recentTbmLogs.map((l: any) => ({ type: 0, title: l.title, createdAt: l.createdAt })),
+			...recentTbmLogs.map((l: any) => ({
+				type: 'tbm',
+				title: l.title + ' TBM 교육',
+				createdAt: l.createdAt,
+			})),
 			// Checklist: type 1, title은 작업(Task)의 제목 사용
 			...recentChecklistLogs.map((l: any) => ({
-				type: 1,
-				title: taskTitleByChecklistId[l.checklistId] ?? '체크리스트',
+				type: 'checklist',
+				title: `${l.task.title} 체크리스트`,
 				createdAt: l.createdAt,
 			})),
 		];
 
-		normalized.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+		normalized.sort(
+			(a, b) =>
+				new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+		);
 		const current = normalized.slice(0, 3);
 
 		return {
 			remainTbm,
 			remainChecklist,
-			current,
+			current: current.map((e) => ({
+				...e,
+				createdAt: e.createdAt.toLocaleString(),
+			})),
 		};
 	}
 	update(id: number, updateDashDto: UpdateDashDto) {
