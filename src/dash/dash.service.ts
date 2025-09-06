@@ -357,12 +357,13 @@ export class DashService {
 			(a, b) =>
 				new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 		);
-		const current = normalized.slice(0, 3);
+		const current = normalized.slice(0, 2);
 
 		return {
 			remainTbm,
 			remainChecklist,
-			current: current.map((e) => ({
+			current:
+				current.map((e) => ({
 				...e,
 				createdAt: e.createdAt.toLocaleString(),
 			})),
