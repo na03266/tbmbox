@@ -295,7 +295,7 @@ export class UsersService {
 	}
 
 	async remove(id: number) {
-		const user = this.workshopRepository
+		const user = await this.userRepository
 			.createQueryBuilder('user')
 			.where('user.id = :id', { id })
 			.getOne();
@@ -303,6 +303,12 @@ export class UsersService {
 		if (!user) {
 			throw new NotFoundException('User not found');
 		}
+
+		if(user.phone === '01012301230') {
+			throw new BadRequestException('삭제할 수 없는 사용자입니다.');
+		}
+
+
 
 		await this.userRepository
 			.createQueryBuilder()
